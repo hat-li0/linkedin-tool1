@@ -91,15 +91,28 @@ with st.sidebar:
 
     st.markdown("---")
     st.subheader("🌐 جلسة لينكدين للتقديم")
-    st.caption("سجّل دخولك لمرة واحدة فقط ليقوم البوت بحفظ الجلسة والتقديم بسهولة:")
+    st.caption("سجّل دخولك لمرة واحدة ليتمكن البوت من التقديم التلقائي على الوظائف:")
+    
+    applier = LinkedInApplier()
+    is_logged = st.session_state.get("linkedin_logged_in", None)
+    if is_logged is None:
+        is_logged = applier.check_session()
+        st.session_state["linkedin_logged_in"] = is_logged
+
+    if is_logged:
+        st.success("🟢 حساب لينكدين متصل ونشط!")
+    else:
+        st.info("⚪ لم يتم حفظ جلسة لينكدين بعد.")
+
     if st.button("🔑 تسجيل الدخول إلى لينكدين"):
-        with st.spinner("جاري فتح المتصفح لتسجيل الدخول..."):
-            try:
-                applier = LinkedInApplier(headless=False)
-                applier.launch_browser_for_login()
-                st.success("تم إنهاء جلسة المتصفح بنجاح!")
-            except Exception as e:
-                st.error(f"حدث خطأ: {e}")
+        st.info("💡 سيفتح متصفح Chrome الآن. يرجى إدخال بريدك وكلمة المرور في المتصفح. بمجرد تسجيل الدخول سيتم حفظ جلستك تلقائياً.")
+        with st.spinner("المتصفح مفتوح بانتظار تسجيل دخولك..."):
+            res = applier.launch_browser_for_login()
+            if res.get("logged_in") or res.get("status") == "success":
+                st.session_state["linkedin_logged_in"] = True
+                st.success(res.get("message", "تم تسجيل الدخول بنجاح!"))
+            else:
+                st.warning(res.get("message", "تم إغلاق المتصفح."))
 
 # ----------------- MAIN CONTENT -----------------
 st.title("🎯 أداة البحث عن الوظائف وتخصيص الـ CV والتقديم الذكي")

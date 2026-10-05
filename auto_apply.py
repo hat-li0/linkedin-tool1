@@ -11,8 +11,28 @@ class LinkedInApplier:
         self.headless = headless
         self.settings = load_settings()
 
+    def check_session(self) -> bool:
+        """Checks if a valid LinkedIn session cookie is already saved."""
+        try:
+            res = subprocess.run(
+                [sys.executable, str(WORKER_SCRIPT), "check"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="ignore",
+                timeout=15
+            )
+            for line in reversed(res.stdout.strip().splitlines()):
+                line = line.strip()
+                if line.startswith("{") and line.endswith("}"):
+                    data = json.loads(line)
+                    return bool(data.get("logged_in"))
+        except Exception:
+            pass
+        return False
+
     def launch_browser_for_login(self) -> dict:
-        """Launches the worker script to let user log in to LinkedIn once."""
+        """Launches official Chrome so user can log in to LinkedIn once."""
         try:
             res = subprocess.run(
                 [sys.executable, str(WORKER_SCRIPT), "login"],
@@ -21,7 +41,6 @@ class LinkedInApplier:
                 encoding="utf-8",
                 errors="ignore"
             )
-            # Find the last valid JSON output line
             for line in reversed(res.stdout.strip().splitlines()):
                 line = line.strip()
                 if line.startswith("{") and line.endswith("}"):
@@ -29,9 +48,9 @@ class LinkedInApplier:
                         return json.loads(line)
                     except Exception:
                         pass
-            return {"status": "success", "message": "تم إغلاق متصفح تسجيل الدخول."}
+            return {"status": "cancelled", "logged_in": False, "message": "تم إغلاق متصفح تسجيل الدخول."}
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return {"status": "error", "logged_in": False, "message": str(e)}
 
     def apply_to_job(self, job_url: str, tailored_cv_pdf_path: str, user_profile: dict = None) -> dict:
         """
