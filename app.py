@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import json
+import base64
 from pathlib import Path
 from config import (
     load_settings, save_settings,
@@ -55,6 +56,16 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+def render_pdf_preview(pdf_bytes: bytes, height: int = 580):
+    """Renders an interactive PDF preview within the browser."""
+    b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    pdf_html = f'''
+    <div style="margin: 12px 0; border: 1px solid #CBD5E1; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+        <iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="{height}px" type="application/pdf" style="border: none;"></iframe>
+    </div>
+    '''
+    st.markdown(pdf_html, unsafe_allow_html=True)
 
 # ----------------- SIDEBAR SETTINGS -----------------
 settings = load_settings()
@@ -321,27 +332,32 @@ with tabs[2]:
                         with open(pdf_file_path, "rb") as f:
                             pdf_bytes = f.read()
                         
-                        st.download_button(
-                            label=f"📥 تحميل الـ CV المخصص لهذه الوظيفة (PDF)",
-                            data=pdf_bytes,
-                            file_name=os.path.basename(pdf_file_path),
-                            mime="application/pdf",
-                            key=f"dl_pdf_{idx}"
-                        )
+                        with st.expander("👁️ معاينة السيرة الذاتية المخصصة قبل التحميل (PDF Preview)", expanded=True):
+                            render_pdf_preview(pdf_bytes, height=580)
+
+                        col_dl, col_apply = st.columns([1, 1])
+                        with col_dl:
+                            st.download_button(
+                                label=f"📥 تحميل الـ CV المخصص لهذه الوظيفة (PDF)",
+                                data=pdf_bytes,
+                                file_name=os.path.basename(pdf_file_path),
+                                mime="application/pdf",
+                                key=f"dl_pdf_{idx}"
+                            )
                         
-                        # Apply button
-                        if st.button(f"🚀 التقديم السريع على الوظيفة بالـ CV المخصص", key=f"apply_{idx}"):
-                            with st.spinner("جاري فتح المتصفح للتقديم التلقائي..."):
-                                applier = LinkedInApplier(headless=False)
-                                apply_res = applier.apply_to_job(
-                                    job_url=job['link'],
-                                    tailored_cv_pdf_path=pdf_file_path,
-                                    user_profile=master_profile
-                                )
-                                if apply_res.get("success"):
-                                    st.success(apply_res.get("message"))
-                                else:
-                                    st.warning(apply_res.get("message"))
+                        with col_apply:
+                            if st.button(f"🚀 التقديم السريع على الوظيفة بالـ CV المخصص", key=f"apply_{idx}"):
+                                with st.spinner("جاري فتح المتصفح للتقديم التلقائي..."):
+                                    applier = LinkedInApplier(headless=False)
+                                    apply_res = applier.apply_to_job(
+                                        job_url=job['link'],
+                                        tailored_cv_pdf_path=pdf_file_path,
+                                        user_profile=master_profile
+                                    )
+                                    if apply_res.get("success"):
+                                        st.success(apply_res.get("message"))
+                                    else:
+                                        st.warning(apply_res.get("message"))
 
                 st.markdown("---")
 
@@ -353,15 +369,14 @@ with tabs[3]:
         st.info("لم يتم توليد أي ملفات بعد.")
     else:
         for p in generated_pdfs:
-            col_f1, col_f2 = st.columns([3, 1])
-            with col_f1:
-                st.write(f"📄 **{p.name}**")
-            with col_f2:
+            with st.expander(f"📄 {p.name}"):
                 with open(p, "rb") as f:
-                    st.download_button(
-                        label="تحميل",
-                        data=f.read(),
-                        file_name=p.name,
-                        mime="application/pdf",
-                        key=f"file_dl_{p.name}"
-                    )
+                    f_bytes = f.read()
+                render_pdf_preview(f_bytes, height=500)
+                st.download_button(
+                    label=f"📥 تحميل {p.name}",
+                    data=f_bytes,
+                    file_name=p.name,
+                    mime="application/pdf",
+                    key=f"file_dl_{p.name}"
+                )
