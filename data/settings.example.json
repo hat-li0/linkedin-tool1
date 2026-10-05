@@ -1,0 +1,10 @@
+{
+  "gemini_api_key": "",
+  "openai_api_key": "",
+  "preferred_llm": "gemini",
+  "target_city": "الرياض",
+  "target_country": "Saudi Arabia",
+  "easy_apply_only": false,
+  "max_jobs_to_search": 15,
+  "auto_apply_delay_seconds": 3
+}

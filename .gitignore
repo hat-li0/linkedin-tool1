@@ -1,0 +1,38 @@
+# Python Bytecode and Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environments and Virtualenv
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.spec
+
+# User Data, Secrets & Profiles (NEVER COMMIT)
+data/settings.json
+data/master_profile.json
+data/browser_profile/
+data/browser_profile/**
+.env
+*.env
+*.log
+
+# Generated Outputs & Private Resumes
+outputs/*.pdf
+outputs/*.txt
+outputs/*
+!outputs/.gitkeep
+!data/.gitkeep
+!data/settings.example.json
+
+# IDEs & System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
