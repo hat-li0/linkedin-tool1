@@ -38,21 +38,22 @@ for reg_path, bold_path in FONT_CANDIDATES:
 
 def safe_render_text(text: str) -> str:
     """
-    Cleans text and ensures that if any Arabic text is present,
-    it is properly reshaped with BiDi algorithm so it never renders as black boxes.
+    Sanitizes text for ATS PDF resume output.
+    Completely removes parenthetical Arabic translations and stray characters
+    to prevent any font glyph errors, black squares, or character corruption.
     """
     if not text:
         return ""
     text = str(text).strip()
     
-    # Check if text contains Arabic characters
-    if re.search(r"[\u0600-\u06FF]", text):
-        try:
-            reshaped = arabic_reshaper.reshape(text)
-            return get_display(reshaped)
-        except Exception:
-            # If reshaping fails, strip Arabic or keep as is
-            pass
+    # Remove parenthetical expressions containing Arabic: e.g. (دبلوم متوسط) or (أرامكو السعودية)
+    text = re.sub(r"\s*\([^\)]*[\u0600-\u06FF]+[^\)]*\)", "", text)
+    # Remove any stray Arabic characters
+    text = re.sub(r"[\u0600-\u06FF]+", "", text)
+    # Remove empty parentheses that might be left behind
+    text = re.sub(r"\(\s*\)", "", text)
+    # Normalize spaces and strip leading/trailing artifacts
+    text = re.sub(r"\s+", " ", text).strip(" -–\t")
     return text
 
 def evaluate_and_tailor_cv(master_profile: dict, job_data: dict) -> dict:
@@ -221,12 +222,12 @@ def generate_pdf_resume(master_profile: dict, tailored_data: dict, job_title: st
     linkedin = master_profile.get("linkedin", "")
     location = master_profile.get("location", "")
 
-    contact_parts = [p for p in [location, phone, email, linkedin] if p]
+    contact_parts = [safe_render_text(p) for p in [location, phone, email, linkedin] if safe_render_text(p)]
     contact_line = " | ".join(contact_parts)
 
     story.append(Paragraph(safe_render_text(name), name_style))
     if contact_line:
-        story.append(Paragraph(safe_render_text(contact_line), contact_style))
+        story.append(Paragraph(contact_line, contact_style))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CBD5E1"), spaceAfter=8))
 
     # 2. Professional Summary
