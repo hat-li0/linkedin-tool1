@@ -286,7 +286,7 @@ with tabs[1]:
 
         col_opt1, col_opt2, col_opt3 = st.columns(3)
         with col_opt1:
-            technician_only = st.checkbox("🎯 وظائف الفنيين والتقنيين فقط (Technician)", value=True, help="يستبعد الوظائف النظرية وهندسة البرمجيات ويركز على الآلات الدقيقة والتحكم")
+            technician_only = st.checkbox("🎯 وظائف الفنيين والتقنيين فقط (Technician)", value=False, help="حصر النتائج في الوظائف الفنية والتقنية والمهارات التطبيقية")
         with col_opt2:
             exclude_managers = st.checkbox("🚫 استبعاد وظائف المدراء (Manager/Lead)", value=True)
         with col_opt3:

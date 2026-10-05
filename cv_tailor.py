@@ -46,7 +46,7 @@ def safe_render_text(text: str) -> str:
         return ""
     text = str(text).strip()
     
-    # Remove parenthetical expressions containing Arabic: e.g. (دبلوم متوسط) or (أرامكو السعودية)
+    # Remove parenthetical expressions containing Arabic characters
     text = re.sub(r"\s*\([^\)]*[\u0600-\u06FF]+[^\)]*\)", "", text)
     # Remove any stray Arabic characters
     text = re.sub(r"[\u0600-\u06FF]+", "", text)
@@ -68,13 +68,11 @@ def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str
     job_desc = job_data.get("description", "")
     
     system_prompt = (
-        "You are a Senior Technical Recruiter & ATS Optimization Specialist for the Energy, "
-        "Petrochemical, and Industrial sectors (such as Saudi Aramco, SABIC, Chevron, Baker Hughes). "
-        "Your task is to tailor a candidate's resume specifically for a job description. "
+        "You are a Senior Executive Recruiter & ATS Optimization Specialist. "
+        "Your task is to tailor a candidate's resume specifically for the target job description based solely on their qualifications. "
         "CRITICAL REQUIREMENT: All CV content (summary, skills, work experience, accomplishments) "
-        "MUST BE 100% IN PROFESSIONAL TECHNICAL ENGLISH. Do NOT include Arabic text or Arabic "
-        "translations in parentheses inside the CV fields. ATS algorithms and hiring managers in "
-        "this sector require standard English resumes."
+        "MUST BE 100% IN PROFESSIONAL ENGLISH. Do NOT include Arabic text or translations in parentheses inside the CV fields. "
+        "ATS algorithms and hiring managers require standard, high-impact English resumes."
     )
 
     prompt = f"""
@@ -87,7 +85,7 @@ Return your response STRICTLY as a valid JSON object matching this structure:
   "matching_skills": ["List of skills from the candidate matching the job requirements in English"],
   "missing_skills": ["List of skills or certs required by the JD not currently highlighted"],
   "match_rationale": "Brief 1-2 sentence explanation of why this candidate is a strong fit",
-  "tailored_summary": "High-impact, 3-4 sentence professional summary in English highlighting relevant instrumentation, calibration, control valves, and Aramco experience tailored for {job_title} at {company}",
+  "tailored_summary": "High-impact, 3-4 sentence professional summary in English highlighting candidate's core qualifications, relevant competencies, and value proposition tailored for {job_title} at {company}",
   "tailored_skills": [
     "Clean list of 8-12 technical skills strictly in English, prioritizing keywords mentioned in the job description"
   ],
@@ -97,7 +95,7 @@ Return your response STRICTLY as a valid JSON object matching this structure:
       "company": "Company name in English",
       "duration": "Dates/Period",
       "highlights": [
-        "Action-oriented bullet points starting with strong past-tense verbs (e.g. Calibrated, Overhauled, Tested, Implemented, Conducted) emphasizing relevant tools (TREX, Fluke, HART, Smart Transmitters, Control Valves, Loop Checks)"
+        "Action-oriented bullet points starting with strong past-tense verbs emphasizing achievements, responsibilities, and relevant tools/technologies aligned with the role."
       ]
     }}
   ],

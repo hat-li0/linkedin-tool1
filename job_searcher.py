@@ -114,20 +114,15 @@ def analyze_job_qualification(job_title: str, job_description: str) -> Dict[str,
         "exp_badge": exp_badge
     }
 
-def is_title_relevant(title: str, required_keywords: List[str] = None) -> bool:
-    """Filters out irrelevant job titles like sales, software, civil, etc."""
+def is_title_relevant(title: str, query_keywords: List[str] = None) -> bool:
+    """Checks if the title matches what the candidate is actually searching for."""
+    if not query_keywords:
+        return True
     t = title.lower()
-    
-    # Negative filters
-    irrelevant_words = [
-        'software', 'frontend', 'backend', 'full stack', 'web developer', 'react', 'python developer',
-        'sales manager', 'accountant', 'human resources', 'recruiter', 'chef', 'driver',
-        'medical', 'doctor', 'nurse', 'pharmacist', 'civil engineer', 'architect'
-    ]
-    if any(w in t for w in irrelevant_words):
-        return False
-        
-    return True
+    words = [w.lower() for kw in query_keywords for w in re.split(r"[\s,]+", kw) if len(w) > 2]
+    if not words:
+        return True
+    return any(w in t for w in words)
 
 def search_linkedin_jobs(
     keywords_list: List[str],
