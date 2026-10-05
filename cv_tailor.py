@@ -13,24 +13,28 @@ from reportlab.pdfbase.ttfonts import TTFont
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# Register Arial Unicode Fonts for clean rendering
+# Register Unicode TrueType Fonts for clean rendering across Windows and Linux
 FONT_NAME = 'Helvetica'
 FONT_BOLD = 'Helvetica-Bold'
 
-for arial_path in ['C:/Windows/Fonts/arial.ttf', '/usr/share/fonts/truetype/msttcorefonts/arial.ttf']:
-    if os.path.exists(arial_path):
+FONT_CANDIDATES = [
+    ('C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/arialbd.ttf'),
+    ('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'),
+    ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+    ('/usr/share/fonts/truetype/msttcorefonts/arial.ttf', '/usr/share/fonts/truetype/msttcorefonts/arialbd.ttf')
+]
+
+for reg_path, bold_path in FONT_CANDIDATES:
+    if os.path.exists(reg_path):
         try:
-            pdfmetrics.registerFont(TTFont('ArialCustom', arial_path))
-            bold_path = arial_path.replace('arial.ttf', 'arialbd.ttf')
-            if os.path.exists(bold_path):
-                pdfmetrics.registerFont(TTFont('ArialCustom-Bold', bold_path))
-            else:
-                pdfmetrics.registerFont(TTFont('ArialCustom-Bold', arial_path))
-            FONT_NAME = 'ArialCustom'
-            FONT_BOLD = 'ArialCustom-Bold'
+            pdfmetrics.registerFont(TTFont('UnicodeFont', reg_path))
+            b_path = bold_path if os.path.exists(bold_path) else reg_path
+            pdfmetrics.registerFont(TTFont('UnicodeFont-Bold', b_path))
+            FONT_NAME = 'UnicodeFont'
+            FONT_BOLD = 'UnicodeFont-Bold'
             break
         except Exception as e:
-            print(f"Font registration notice: {e}")
+            print(f"Font notice: {e}")
 
 def safe_render_text(text: str) -> str:
     """
