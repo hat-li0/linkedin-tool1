@@ -91,9 +91,13 @@ def prompt_api_key_dialog():
     new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password", placeholder="AIzaSy...")
     
     if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
-        if new_key.strip():
-            st.session_state["gemini_api_key"] = new_key.strip()
+        clean_key = new_key.strip()
+        if clean_key:
+            if not clean_key.startswith("AIzaSy"):
+                st.warning("⚠️ تنبيه: مفتاح Google Gemini يبدأ عادة بـ `AIzaSy...`. يرجى التأكد من نسخه بدقة من الرابط أعلاه.")
+            st.session_state["gemini_api_key"] = clean_key
             st.session_state["preferred_llm"] = "gemini"
+            st.session_state["auto_trigger_analysis"] = True
             st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
             st.rerun()
         else:
@@ -183,14 +187,17 @@ with tabs[0]:
     )
     
     if uploaded_file is not None:
-        if st.button("🚀 تحليل السيرة الذاتية واستخراج التخصص والمهارات"):
+        analyze_clicked = st.button("🚀 تحليل السيرة الذاتية واستخراج التخصص والمهارات")
+        should_analyze = analyze_clicked or st.session_state.pop("auto_trigger_analysis", False)
+
+        if should_analyze:
             active_key = st.session_state.get("gemini_api_key", "").strip()
             active_openai = st.session_state.get("openai_api_key", "").strip()
 
             if not active_key and not active_openai:
                 prompt_api_key_dialog()
             else:
-                with st.spinner("جاري قراءة الملف وتحليله بالذكاء الاصطناعي..."):
+                with st.spinner(f"جاري قراءة الملف ({uploaded_file.name}) وتحليله بالذكاء الاصطناعي..."):
                     try:
                         raw_text = extract_text_from_file(uploaded_file, uploaded_file.name)
                         parsed_profile = parse_cv_with_ai(
@@ -199,11 +206,13 @@ with tabs[0]:
                             llm_type=st.session_state.get("preferred_llm", "gemini")
                         )
                         st.session_state["master_profile"] = parsed_profile
+                        st.session_state["search_results"] = []
+                        st.session_state["session_generated_pdfs"] = []
                         master_profile = parsed_profile
-                        st.success("تم تحليل السيرة الذاتية بنجاح!")
+                        st.success(f"تم تحليل السيرة الذاتية ({uploaded_file.name}) بنجاح!")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"حدث خطأ أثناء التحليل: {e}")
+                        st.error(f"❌ حدث خطأ أثناء التحليل: {e}")
 
     if master_profile:
         st.markdown("---")

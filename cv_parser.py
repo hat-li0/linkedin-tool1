@@ -3,12 +3,15 @@ import re
 from pathlib import Path
 from pypdf import PdfReader
 from docx import Document
-from ai_engine import ask_llm_json, get_llm_client
+from ai_engine import ask_llm_json
 
 def extract_text_from_file(file_path_or_bytes, filename: str) -> str:
     """Extracts raw text from PDF, DOCX, or TXT."""
     filename_lower = filename.lower()
     text = ""
+    
+    if hasattr(file_path_or_bytes, "seek"):
+        file_path_or_bytes.seek(0)
     
     if filename_lower.endswith(".pdf"):
         reader = PdfReader(file_path_or_bytes)
@@ -30,60 +33,32 @@ def extract_text_from_file(file_path_or_bytes, filename: str) -> str:
     else:
         raise ValueError("صيغة الملف غير مدعومة. يرجى رفع ملف PDF أو DOCX أو TXT.")
         
-    return text.strip()
+    cleaned = text.strip()
+    if not cleaned:
+        raise ValueError("الملف المرفوع فارغ أو لا يحتوي على نصوص قابلة للقراءة (قد يكون صورة ممسوحة ضوئياً). يرجى التأكد من رفع ملف يحتوي على نصوص واضحة.")
+    return cleaned
 
 def heuristic_extract_profile(raw_text: str) -> dict:
-    """Fallback extractor if no LLM key is configured."""
+    """Generic fallback extractor if no LLM is available."""
     email_match = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", raw_text)
     phone_match = re.search(r"(\+?\d{1,4}[\s-]?)?\(?\d{3}\)?[\s-]?\d{3}[\s-]?\d{4}", raw_text)
     
-    first_lines = [line.strip() for line in raw_text.split("\n") if line.strip()][:5]
-    name = first_lines[0] if first_lines else "الباحث عن عمل"
+    lines = [line.strip() for line in raw_text.split("\n") if line.strip()]
+    name = lines[0] if lines else "الباحث عن عمل"
     
-    # Comprehensive skills library across engineering and tech
-    instrument_skills = [
-        "Instrumentation", "Control Valves", "Transmitters", "HART", "PLC", "DCS", 
-        "P&ID", "Calibration", "Fluke", "SCADA", "Automation", "Loop Check", "Fire & Gas", "LOTO"
-    ]
-    tech_skills = [
-        "Python", "JavaScript", "SQL", "Java", "C++", "React", "Data Analysis", "Machine Learning"
-    ]
-    
-    found_instrument = [s for s in instrument_skills if re.search(rf"\b{re.escape(s)}\b", raw_text, re.IGNORECASE)]
-    found_tech = [s for s in tech_skills if re.search(rf"\b{re.escape(s)}\b", raw_text, re.IGNORECASE)]
-    
-    if found_instrument:
-        target_major = "آلات دقيقة وتحكم صناعي (Instrumentation & Control)"
-        suggested_job_titles = [
-            "Instrument Technician",
-            "Instrumentation & Control Technician",
-            "Instrument Maintenance Technician",
-            "Calibration Technician"
-        ]
-        skills = found_instrument
-    elif found_tech:
-        target_major = "تقنية معلومات وبرمجيات"
-        suggested_job_titles = [
-            "Software Engineer",
-            "Full Stack Developer",
-            "Data Analyst"
-        ]
-        skills = found_tech
-    else:
-        target_major = "هندسة وفني صيانة"
-        suggested_job_titles = ["Technician", "Maintenance Specialist", "Field Operator"]
-        skills = ["صيانة وتشغيل", "التواصل", "حل المشكلات"]
+    # Extract candidate title / major from top lines if available
+    potential_title = lines[1] if len(lines) > 1 and len(lines[1]) < 60 else "عام"
     
     return {
         "name": name,
         "email": email_match.group(0) if email_match else "",
         "phone": phone_match.group(0) if phone_match else "",
-        "target_major": target_major,
+        "target_major": potential_title,
         "experience_level": "متوسط",
-        "summary": raw_text[:350] + "..." if len(raw_text) > 350 else raw_text,
-        "skills": skills,
-        "suggested_job_titles": suggested_job_titles,
-        "search_keywords": suggested_job_titles[:3],
+        "summary": raw_text[:300] + "..." if len(raw_text) > 300 else raw_text,
+        "skills": ["مهارات عامة"],
+        "suggested_job_titles": [potential_title] if potential_title != "عام" else ["Specialist", "Officer"],
+        "search_keywords": [potential_title] if potential_title != "عام" else ["Specialist"],
         "work_experience": [],
         "education": [],
         "raw_text": raw_text
@@ -91,32 +66,28 @@ def heuristic_extract_profile(raw_text: str) -> dict:
 
 def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None) -> dict:
     """Parses raw CV text into structured profile data and auto-generates target search keywords."""
-    client_type, _ = get_llm_client(custom_key=custom_key, llm_type=llm_type)
-    if client_type == "none":
-        return heuristic_extract_profile(raw_text)
-        
     system_prompt = (
-        "أنت خبير محترف في الموارد البشرية (HR) وفحص السير الذاتية لأنظمة الـ ATS والتطظيف على LinkedIn. "
-        "مهمتك هي تحليل نص السيرة الذاتية بدقة واستخراج البيانات الأساسية، وتحديد تخصص المرشح بدقة، "
-        "واقتراح أفضل المسميات الوظيفية (Job Titles) والكلمات المفتاحية للبحث عن وظائف تناسبه تماماً."
+        "أنت خبير محترف في الموارد البشرية (HR) وفحص السير الذاتية لأنظمة الـ ATS والتوظيف على LinkedIn. "
+        "مهمتك هي تحليل نص السيرة الذاتية المرفقة بدقة شديدة واستخراج بيانات المرشح الخاصة بهذا الملف حصراً، "
+        "وتحديد تخصصه الدقيق، واقتراح أفضل المسميات الوظيفية باللغة الإنجليزية للبحث عنها في لينكدين."
     )
     
     prompt = f"""
-قم بتحليل السيرة الذاتية التالية واستخرج بيانتها بصيغة JSON طبقاً للهيكل التالي بدقة:
+قم بتحليل نص السيرة الذاتية التالي واستخرج بيانتها بصيغة JSON طبقاً للهيكل التالي بدقة:
 
 {{
-  "name": "اسم المرشح الكامل",
+  "name": "اسم المرشح الكامل كما هو وارد في الـ CV",
   "email": "البريد الإلكتروني",
   "phone": "رقم الهاتف",
   "linkedin": "رابط حساب لينكدين إن وجد",
-  "target_major": "التخصص الأساسي الدقيق للمرشح (مثلاً: هندسة برمجيات، علم بيانات، أمن سيبراني، إدارة مشاريع، محاسبة، تسويق رقمي)",
+  "target_major": "التخصص الأساسي الدقيق للمرشح المذكور في هذا الـ CV (مثلاً: Software Engineering, Mechanical Engineering, Data Science, Accounting, Instrumentation, etc.)",
   "experience_level": "المستوى الوظيفي التقريبي (حديث تخرج / مبتدئ / متوسط / متقدم / إداري)",
-  "summary": "نبذة مهنية احترافية مركزة تلخص خبرات المرشح وأبرز نقاط قوته",
-  "skills": ["قائمة بأبرز المهارات التقنية والمهنية الأساسية"],
+  "summary": "نبذة مهنية احترافية تلخص خبرات هذا المرشح بالذات",
+  "skills": ["قائمة بأبرز المهارات التقنية والمهنية الأساسية الواردة في السيرة"],
   "suggested_job_titles": [
-    "قائمة بـ 4 إلى 6 مسميات وظيفية دقيقة باللغة الإنجليزية والإنجليزية/العربية هي الأنسب للبحث عنها في لينكدين بناء على تخصص وخبرة المرشح"
+    "قائمة بـ 4 إلى 6 مسميات وظيفية دقيقة باللغة الإنجليزية مستخرجة من تخصص وخبرة هذا المرشح للبحث عنها في لينكدين"
   ],
-  "search_keywords": ["3 إلى 5 كلمات بحث مفتاحية أساسية للبحث في مواقع التوظيف"],
+  "search_keywords": ["3 إلى 5 كلمات بحث مفتاحية أساسية بالإنجليزية تناسب تخصص هذا المرشح"],
   "work_experience": [
     {{
       "role": "المسمى الوظيفي",
@@ -126,7 +97,6 @@ def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None
     }}
   ],
   "location": "المدينة والدولة إن وجدت",
-  "honors": ["قائمة بالجوائز وشهادات الشكر والتكريم إن وجدت"],
   "education": [
     {{
       "degree": "الدرجة العلمية",
@@ -137,17 +107,11 @@ def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None
   ]
 }}
 
-نص السيرة الذاتية:
+نص السيرة الذاتية للمرشح:
 \"\"\"
 {raw_text[:12000]}
 \"\"\"
 """
-    try:
-        data = ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
-        data["raw_text"] = raw_text
-        return data
-    except Exception as e:
-        print(f"Error calling AI parser: {e}, falling back to heuristic...")
-        fallback = heuristic_extract_profile(raw_text)
-        fallback["error_note"] = str(e)
-        return fallback
+    data = ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
+    data["raw_text"] = raw_text
+    return data

@@ -119,26 +119,21 @@ Candidate Master Profile:
     try:
         return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
     except Exception as e:
-        print(f"LLM tailoring error: {e}, using structured fallback...")
+        print(f"LLM tailoring notice: {e}, using dynamic candidate profile fallback...")
+        skills = master_profile.get("skills", [])
+        experience = master_profile.get("work_experience", [])
+        cand_major = master_profile.get("target_major", "Professional Specialist")
+        cand_name = master_profile.get("name", "Applicant")
+        
         return {
-            "match_score": 88,
-            "matching_skills": ["Smart Transmitters Calibration", "HART TREX", "Fluke Calibrators", "Control Valves Maintenance", "Loop Checks"],
-            "missing_skills": ["Specific vendor software"],
-            "match_rationale": "Candidate has hands-on Saudi Aramco VCIP training with honors from Yanbu Technical Institute.",
-            "tailored_summary": f"Detail-oriented Industrial Instrumentation & Control Technician with hands-on operational experience at Saudi Aramco (Yanbu). Proven expertise in calibrating smart transmitters, servicing control valves, executing point-to-point loop checks, and adhering to strict HSE/WPR standards. Highly motivated to deliver technical excellence as a {job_title} at {company}.",
-            "tailored_skills": [
-                "Smart Transmitters Calibration (Pressure, DP, Level, Temp)",
-                "Emerson TREX & HART 475 Communicators",
-                "Fluke Calibrators (754 / 744)",
-                "Control Valves Maintenance & Stroke Testing",
-                "Loop Checks & End-to-End Signal Verification",
-                "PLC & DCS Troubleshooting",
-                "P&ID & Instrument Loop Diagrams (ILD)",
-                "Fire & Gas (F&G) Safety Systems",
-                "Saudi Aramco Work Permit System (WPR) & LOTO"
-            ],
-            "tailored_experience": master_profile.get("work_experience", []),
-            "cover_letter": f"Dear Hiring Team at {company},\n\nI am writing to express my enthusiastic interest in the {job_title} position. With my relevant technical background and hands-on operational training, I bring proven competencies aligned with your requirements.\n\nI look forward to discussing how my dedication can support {company}'s ongoing success.\n\nSincerely,\n{master_profile.get('name', 'Applicant')}"
+            "match_score": 75,
+            "matching_skills": skills[:5] if skills else ["Professional Expertise"],
+            "missing_skills": ["Job-specific technical requirements"],
+            "match_rationale": f"Candidate demonstrates relevant qualifications in {cand_major}.",
+            "tailored_summary": f"Dedicated {cand_major} professional with proven background in the field. Seeking to leverage skills and practical experience as {job_title} at {company}.",
+            "tailored_skills": skills[:8] if skills else ["Technical Skills", "Problem Solving", "Teamwork"],
+            "tailored_experience": experience,
+            "cover_letter": f"Dear Hiring Team at {company},\n\nI am writing to express my strong interest in the {job_title} role. With my background in {cand_major}, I am confident in my ability to contribute effectively to your organization.\n\nSincerely,\n{cand_name}"
         }
 
 def generate_pdf_resume(master_profile: dict, tailored_data: dict, job_title: str, company: str) -> str:
