@@ -3,11 +3,7 @@ import os
 import json
 import base64
 from pathlib import Path
-from config import (
-    load_settings, save_settings,
-    load_master_profile, save_master_profile,
-    OUTPUTS_DIR
-)
+from config import OUTPUTS_DIR
 from cv_parser import extract_text_from_file, parse_cv_with_ai
 from job_searcher import search_linkedin_jobs, fetch_job_description, analyze_job_qualification, CITY_MAP
 from cv_tailor import evaluate_and_tailor_cv, generate_pdf_resume
@@ -19,6 +15,20 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Initialize Session-Isolated State
+if "master_profile" not in st.session_state:
+    st.session_state["master_profile"] = None
+if "gemini_api_key" not in st.session_state:
+    st.session_state["gemini_api_key"] = ""
+if "openai_api_key" not in st.session_state:
+    st.session_state["openai_api_key"] = ""
+if "preferred_llm" not in st.session_state:
+    st.session_state["preferred_llm"] = "gemini"
+if "search_results" not in st.session_state:
+    st.session_state["search_results"] = []
+if "session_generated_pdfs" not in st.session_state:
+    st.session_state["session_generated_pdfs"] = []
 
 # Custom Styling (RTL and sleek cards)
 st.markdown("""
@@ -82,18 +92,14 @@ def prompt_api_key_dialog():
     
     if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
         if new_key.strip():
-            curr_set = load_settings()
-            curr_set["gemini_api_key"] = new_key.strip()
-            curr_set["preferred_llm"] = "gemini"
-            save_settings(curr_set)
+            st.session_state["gemini_api_key"] = new_key.strip()
+            st.session_state["preferred_llm"] = "gemini"
             st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
             st.rerun()
         else:
             st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
 
 # ----------------- SIDEBAR SETTINGS -----------------
-settings = load_settings()
-
 with st.sidebar:
     st.header("⚙️ إعدادات الذكاء الاصطناعي")
     
@@ -101,27 +107,30 @@ with st.sidebar:
         "مزود الذكاء الاصطناعي المفضل:",
         options=["gemini", "openai"],
         format_func=lambda x: "Google Gemini (موصى به - متوفر مجاناً)" if x == "gemini" else "OpenAI GPT-4o-mini",
-        index=0 if settings.get("preferred_llm") == "gemini" else 1
+        index=0 if st.session_state.get("preferred_llm") == "gemini" else 1
     )
-    
+    st.session_state["preferred_llm"] = llm_choice
+
     gemini_key = st.text_input(
         "Google Gemini API Key:",
-        value=settings.get("gemini_api_key", ""),
+        value=st.session_state.get("gemini_api_key", ""),
         type="password",
         help="احصل على مفتاح مجاني فوري من: https://aistudio.google.com/app/apikey"
     )
-    
+    if gemini_key != st.session_state.get("gemini_api_key"):
+        st.session_state["gemini_api_key"] = gemini_key.strip()
+        
     openai_key = st.text_input(
         "OpenAI API Key (اختياري):",
-        value=settings.get("openai_api_key", ""),
+        value=st.session_state.get("openai_api_key", ""),
         type="password"
     )
-    
-    if st.button("💾 حفظ الإعدادات"):
-        settings["preferred_llm"] = llm_choice
-        settings["gemini_api_key"] = gemini_key
-        settings["openai_api_key"] = openai_key
-        save_settings(settings)
+    if openai_key != st.session_state.get("openai_api_key"):
+        st.session_state["openai_api_key"] = openai_key.strip()
+
+    if st.button("💾 حفظ الإعدادات للجلسة"):
+        st.session_state["gemini_api_key"] = gemini_key.strip()
+        st.session_state["openai_api_key"] = openai_key.strip()
         st.success("تم حفظ الإعدادات بنجاح!")
 
     st.markdown("---")
@@ -153,7 +162,7 @@ with st.sidebar:
 st.title("🎯 أداة البحث عن الوظائف وتخصيص الـ CV والتقديم الذكي")
 st.caption("أداة متكاملة: ترفع سيرتك الذاتية الأساسية، تختار المدينة، وتبحث لك عن الوظائف المناسبة لتخصصك وتخصص لك الـ CV لكل وظيفة على حدة!")
 
-master_profile = load_master_profile()
+master_profile = st.session_state.get("master_profile", None)
 
 tabs = st.tabs([
     "1️⃣ السيرة الذاتية الأساسية",
@@ -175,20 +184,23 @@ with tabs[0]:
     
     if uploaded_file is not None:
         if st.button("🚀 تحليل السيرة الذاتية واستخراج التخصص والمهارات"):
-            curr_settings = load_settings()
-            gemini_key = curr_settings.get("gemini_api_key", "").strip() or os.environ.get("GEMINI_API_KEY", "")
-            openai_key = curr_settings.get("openai_api_key", "").strip() or os.environ.get("OPENAI_API_KEY", "")
+            active_key = st.session_state.get("gemini_api_key", "").strip()
+            active_openai = st.session_state.get("openai_api_key", "").strip()
 
-            if not gemini_key and not openai_key:
+            if not active_key and not active_openai:
                 prompt_api_key_dialog()
             else:
                 with st.spinner("جاري قراءة الملف وتحليله بالذكاء الاصطناعي..."):
                     try:
                         raw_text = extract_text_from_file(uploaded_file, uploaded_file.name)
-                        parsed_profile = parse_cv_with_ai(raw_text)
-                        save_master_profile(parsed_profile)
+                        parsed_profile = parse_cv_with_ai(
+                            raw_text,
+                            custom_key=active_key or active_openai,
+                            llm_type=st.session_state.get("preferred_llm", "gemini")
+                        )
+                        st.session_state["master_profile"] = parsed_profile
                         master_profile = parsed_profile
-                        st.success("تم تحليل السيرة الذاتية بنجاح وحفظ الملف الشخصي الأساسي!")
+                        st.success("تم تحليل السيرة الذاتية بنجاح!")
                         st.rerun()
                     except Exception as e:
                         st.error(f"حدث خطأ أثناء التحليل: {e}")
@@ -217,6 +229,12 @@ with tabs[0]:
         
         with st.expander("📝 عرض النبذة المهنية المستخرجة (Summary)"):
             st.write(master_profile.get("summary", "لا يوجد"))
+
+        if st.button("🔄 مسح السيرة والبدء من جديد (Reset)"):
+            st.session_state["master_profile"] = None
+            st.session_state["search_results"] = []
+            st.session_state["session_generated_pdfs"] = []
+            st.rerun()
     else:
         st.info("💡 لم يتم رفع سيرة ذاتية بعد. يرجى رفع ملفك بصيغة PDF أو DOCX للبدء.")
 
@@ -323,17 +341,21 @@ with tabs[2]:
                 tailored_key = f"tailored_{job['id']}"
 
                 if tailor_btn:
-                    curr_settings = load_settings()
-                    gemini_key = curr_settings.get("gemini_api_key", "").strip() or os.environ.get("GEMINI_API_KEY", "")
-                    openai_key = curr_settings.get("openai_api_key", "").strip() or os.environ.get("OPENAI_API_KEY", "")
-                    if not gemini_key and not openai_key:
+                    active_key = st.session_state.get("gemini_api_key", "").strip()
+                    active_openai = st.session_state.get("openai_api_key", "").strip()
+                    if not active_key and not active_openai:
                         prompt_api_key_dialog()
                     else:
                         with st.spinner("جاري جلب تفاصيل الوظيفة الكاملة وتحليل التوافق وتخصيص الـ CV..."):
                             if not job.get("description"):
                                 job["description"] = fetch_job_description(job['id'])
                             
-                            tailored_res = evaluate_and_tailor_cv(master_profile, job)
+                            tailored_res = evaluate_and_tailor_cv(
+                                master_profile=master_profile,
+                                job_data=job,
+                                custom_key=active_key or active_openai,
+                                llm_type=st.session_state.get("preferred_llm", "gemini")
+                            )
                             # Generate tailored PDF
                             pdf_path = generate_pdf_resume(
                                 master_profile=master_profile,
@@ -343,6 +365,8 @@ with tabs[2]:
                             )
                             tailored_res["pdf_path"] = pdf_path
                             st.session_state[tailored_key] = tailored_res
+                            if pdf_path and pdf_path not in st.session_state["session_generated_pdfs"]:
+                                st.session_state["session_generated_pdfs"].append(pdf_path)
 
                 if tailored_key in st.session_state:
                     res = st.session_state[tailored_key]
@@ -401,20 +425,23 @@ with tabs[2]:
 
 # ----------------- TAB 4: GENERATED FILES -----------------
 with tabs[3]:
-    st.subheader("📁 جميع ملفات السير الذاتية التي تم تخصيصها وتوليدها")
-    generated_pdfs = list(OUTPUTS_DIR.glob("*.pdf"))
-    if not generated_pdfs:
-        st.info("لم يتم توليد أي ملفات بعد.")
+    st.subheader("📁 السير الذاتية التي قمت بتخصيصها في هذه الجلسة")
+    session_pdfs = st.session_state.get("session_generated_pdfs", [])
+    valid_pdfs = [p for p in session_pdfs if os.path.exists(p)]
+    
+    if not valid_pdfs:
+        st.info("💡 لم تقم بتوليد أي سيرة ذاتية في جلستك الحالية بعد. اختر وظيفة من الخطوة 3 واضغط 'تخصيص الـ CV' لتظهر وتُحفظ هنا.")
     else:
-        for p in generated_pdfs:
-            with st.expander(f"📄 {p.name}"):
-                with open(p, "rb") as f:
+        for p in valid_pdfs:
+            p_path = Path(p)
+            with st.expander(f"📄 {p_path.name}", expanded=True):
+                with open(p_path, "rb") as f:
                     f_bytes = f.read()
-                render_pdf_preview(f_bytes, height=500)
+                render_pdf_preview(f_bytes, height=520)
                 st.download_button(
-                    label=f"📥 تحميل {p.name}",
+                    label=f"📥 تحميل {p_path.name} (PDF)",
                     data=f_bytes,
-                    file_name=p.name,
+                    file_name=p_path.name,
                     mime="application/pdf",
-                    key=f"file_dl_{p.name}"
+                    key=f"file_dl_{p_path.name}"
                 )

@@ -56,12 +56,12 @@ def safe_render_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip(" -–\t")
     return text
 
-def evaluate_and_tailor_cv(master_profile: dict, job_data: dict) -> dict:
+def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str = None, llm_type: str = None) -> dict:
     """
     Compares the master CV against a job description, calculates match score,
     and produces tailored CV content + cover letter in professional ATS-compliant English.
     """
-    client_type, _ = get_llm_client()
+    client_type, _ = get_llm_client(custom_key=custom_key, llm_type=llm_type)
     
     job_title = job_data.get("title", "")
     company = job_data.get("company", "")
@@ -117,7 +117,7 @@ Candidate Master Profile:
 """
 
     try:
-        return ask_llm_json(prompt, system_prompt=system_prompt)
+        return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
     except Exception as e:
         print(f"LLM tailoring error: {e}, using structured fallback...")
         return {

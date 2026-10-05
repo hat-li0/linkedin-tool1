@@ -89,9 +89,9 @@ def heuristic_extract_profile(raw_text: str) -> dict:
         "raw_text": raw_text
     }
 
-def parse_cv_with_ai(raw_text: str) -> dict:
+def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None) -> dict:
     """Parses raw CV text into structured profile data and auto-generates target search keywords."""
-    client_type, _ = get_llm_client()
+    client_type, _ = get_llm_client(custom_key=custom_key, llm_type=llm_type)
     if client_type == "none":
         return heuristic_extract_profile(raw_text)
         
@@ -143,7 +143,7 @@ def parse_cv_with_ai(raw_text: str) -> dict:
 \"\"\"
 """
     try:
-        data = ask_llm_json(prompt, system_prompt=system_prompt)
+        data = ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
         data["raw_text"] = raw_text
         return data
     except Exception as e:
