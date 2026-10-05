@@ -30,6 +30,21 @@ def get_active_keys(custom_key: str = None, llm_type: str = None):
         
     return llm_type, gemini_key, openai_key
 
+def get_llm_client(custom_key: str = None, llm_type: str = None):
+    """Backward compatibility helper for retrieving configured LLM client."""
+    chosen_type, gemini_key, openai_key = get_active_keys(custom_key=custom_key, llm_type=llm_type)
+    if chosen_type == "openai" and openai_key:
+        from openai import OpenAI
+        return "openai", OpenAI(api_key=openai_key)
+    elif gemini_key:
+        import google.generativeai as genai
+        genai.configure(api_key=gemini_key)
+        return "gemini", genai
+    elif openai_key:
+        from openai import OpenAI
+        return "openai", OpenAI(api_key=openai_key)
+    return "none", None
+
 def ask_gemini(prompt: str, system_prompt: str, gemini_key: str) -> str:
     import google.generativeai as genai
     genai.configure(api_key=gemini_key)

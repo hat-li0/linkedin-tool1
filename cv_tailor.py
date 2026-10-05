@@ -61,8 +61,6 @@ def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str
     Compares the master CV against a job description, calculates match score,
     and produces tailored CV content + cover letter in professional ATS-compliant English.
     """
-    client_type, _ = get_llm_client(custom_key=custom_key, llm_type=llm_type)
-    
     job_title = job_data.get("title", "")
     company = job_data.get("company", "")
     job_desc = job_data.get("description", "")
