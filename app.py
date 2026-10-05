@@ -67,6 +67,30 @@ def render_pdf_preview(pdf_bytes: bytes, height: int = 580):
     '''
     st.markdown(pdf_html, unsafe_allow_html=True)
 
+@st.dialog("🔑 مطلوب إدخال مفتاح Google Gemini للبدء")
+def prompt_api_key_dialog():
+    st.markdown("""
+    **مرحباً بك!** 👋  
+    لقراءة سيرتك الذاتية وتحديد تخصصك ومؤهلاتك بدقة وتخصيص الـ CV لكل وظيفة، تحتاج إلى إدخال مفتاح **Google Gemini**.
+    
+    ✨ **المفتاح مجاني 100% وفوري وبدون أي اشتراك أو بطاقة بنكية!**  
+    احصل على مفتاحك المجاني خلال ثوانٍ من الرابط التالي:  
+    👉 [**اضغط هنا لفتح Google AI Studio ونسخ المفتاح مجاناً**](https://aistudio.google.com/app/apikey)
+    """)
+    
+    new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password", placeholder="AIzaSy...")
+    
+    if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
+        if new_key.strip():
+            curr_set = load_settings()
+            curr_set["gemini_api_key"] = new_key.strip()
+            curr_set["preferred_llm"] = "gemini"
+            save_settings(curr_set)
+            st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
+            st.rerun()
+        else:
+            st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
+
 # ----------------- SIDEBAR SETTINGS -----------------
 settings = load_settings()
 
@@ -151,15 +175,23 @@ with tabs[0]:
     
     if uploaded_file is not None:
         if st.button("🚀 تحليل السيرة الذاتية واستخراج التخصص والمهارات"):
-            with st.spinner("جاري قراءة الملف وتحليله بالذكاء الاصطناعي..."):
-                try:
-                    raw_text = extract_text_from_file(uploaded_file, uploaded_file.name)
-                    parsed_profile = parse_cv_with_ai(raw_text)
-                    save_master_profile(parsed_profile)
-                    master_profile = parsed_profile
-                    st.success("تم تحليل السيرة الذاتية بنجاح وحفظ الملف الشخصي الأساسي!")
-                except Exception as e:
-                    st.error(f"حدث خطأ أثناء التحليل: {e}")
+            curr_settings = load_settings()
+            gemini_key = curr_settings.get("gemini_api_key", "").strip() or os.environ.get("GEMINI_API_KEY", "")
+            openai_key = curr_settings.get("openai_api_key", "").strip() or os.environ.get("OPENAI_API_KEY", "")
+
+            if not gemini_key and not openai_key:
+                prompt_api_key_dialog()
+            else:
+                with st.spinner("جاري قراءة الملف وتحليله بالذكاء الاصطناعي..."):
+                    try:
+                        raw_text = extract_text_from_file(uploaded_file, uploaded_file.name)
+                        parsed_profile = parse_cv_with_ai(raw_text)
+                        save_master_profile(parsed_profile)
+                        master_profile = parsed_profile
+                        st.success("تم تحليل السيرة الذاتية بنجاح وحفظ الملف الشخصي الأساسي!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"حدث خطأ أثناء التحليل: {e}")
 
     if master_profile:
         st.markdown("---")
@@ -291,20 +323,26 @@ with tabs[2]:
                 tailored_key = f"tailored_{job['id']}"
 
                 if tailor_btn:
-                    with st.spinner("جاري جلب تفاصيل الوظيفة الكاملة وتحليل التوافق وتخصيص الـ CV..."):
-                        if not job.get("description"):
-                            job["description"] = fetch_job_description(job['id'])
-                        
-                        tailored_res = evaluate_and_tailor_cv(master_profile, job)
-                        # Generate tailored PDF
-                        pdf_path = generate_pdf_resume(
-                            master_profile=master_profile,
-                            tailored_data=tailored_res,
-                            job_title=job['title'],
-                            company=job['company']
-                        )
-                        tailored_res["pdf_path"] = pdf_path
-                        st.session_state[tailored_key] = tailored_res
+                    curr_settings = load_settings()
+                    gemini_key = curr_settings.get("gemini_api_key", "").strip() or os.environ.get("GEMINI_API_KEY", "")
+                    openai_key = curr_settings.get("openai_api_key", "").strip() or os.environ.get("OPENAI_API_KEY", "")
+                    if not gemini_key and not openai_key:
+                        prompt_api_key_dialog()
+                    else:
+                        with st.spinner("جاري جلب تفاصيل الوظيفة الكاملة وتحليل التوافق وتخصيص الـ CV..."):
+                            if not job.get("description"):
+                                job["description"] = fetch_job_description(job['id'])
+                            
+                            tailored_res = evaluate_and_tailor_cv(master_profile, job)
+                            # Generate tailored PDF
+                            pdf_path = generate_pdf_resume(
+                                master_profile=master_profile,
+                                tailored_data=tailored_res,
+                                job_title=job['title'],
+                                company=job['company']
+                            )
+                            tailored_res["pdf_path"] = pdf_path
+                            st.session_state[tailored_key] = tailored_res
 
                 if tailored_key in st.session_state:
                     res = st.session_state[tailored_key]
