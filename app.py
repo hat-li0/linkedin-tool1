@@ -483,29 +483,81 @@ st.markdown(f"""
         box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
     }}
 
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {{
+    /* Tabs Base Styling: Hide native underline and highlight bar */
+    .stTabs [data-baseweb="tab-border"],
+    .stTabs [data-baseweb="tab-highlight"],
+    [data-testid="stTabs"] [data-baseweb="tab-border"],
+    [data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
+        display: none !important;
+        background: transparent !important;
+        height: 0 !important;
+    }}
+
+    .stTabs [data-baseweb="tab-list"],
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {{
         justify-content: flex-start !important;
         direction: rtl !important;
         gap: 8px !important;
+        border: none !important;
         scrollbar-width: none;
     }}
-    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar,
+    [data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {{
         display: none;
     }}
-    .stTabs [data-baseweb="tab"] {{
-        font-weight: 700;
-        white-space: nowrap;
-        background-color: #161F30;
-        border: 1px solid #283548;
-        color: #94A3B8;
+
+    /* All Tabs: Rounded luxury dark pill buttons with high specificity */
+    .stTabs [data-baseweb="tab"],
+    [data-testid="stTabs"] [data-baseweb="tab"],
+    button[data-baseweb="tab"],
+    div[data-baseweb="tab-list"] button {{
+        background-color: #161F30 !important;
+        border: 1px solid #283548 !important;
+        border-radius: 12px !important;
+        color: #94A3B8 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        padding: 9px 18px !important;
+        white-space: nowrap !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+        transition: all 0.2s ease !important;
+        outline: none !important;
     }}
-    .stTabs [aria-selected="true"] {{
-        background: linear-gradient(135deg, #0284C7, #38BDF8) !important;
-        color: #0F172A !important;
-        font-weight: 800 !important;
+
+    .stTabs [data-baseweb="tab"]:hover,
+    [data-testid="stTabs"] [data-baseweb="tab"]:hover,
+    div[data-baseweb="tab-list"] button:hover {{
         border-color: #38BDF8 !important;
-        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3) !important;
+        color: #F8FAFC !important;
+        background-color: #1E293B !important;
+    }}
+
+    /* Selected Active Tab: Glowing Cyan Pill Button */
+    .stTabs [aria-selected="true"],
+    [data-testid="stTabs"] [aria-selected="true"],
+    button[data-baseweb="tab"][aria-selected="true"],
+    div[data-baseweb="tab-list"] button[aria-selected="true"] {{
+        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
+        color: #0F172A !important;
+        font-weight: 900 !important;
+        border: 1px solid #38BDF8 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4) !important;
+    }}
+
+    /* Ensure text inside active tab is dark obsidian for high contrast */
+    .stTabs [aria-selected="true"] p,
+    [data-testid="stTabs"] [aria-selected="true"] p,
+    button[data-baseweb="tab"][aria-selected="true"] p {{
+        color: #0F172A !important;
+        font-weight: 900 !important;
+    }}
+
+    /* Inactive tab text */
+    .stTabs [aria-selected="false"] p,
+    [data-testid="stTabs"] [aria-selected="false"] p,
+    button[data-baseweb="tab"][aria-selected="false"] p {{
+        color: #94A3B8 !important;
     }}
 
     /* File Uploader Fix: Keep internal dropzone in LTR so Browse button & text never collide */
