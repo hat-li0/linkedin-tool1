@@ -2,11 +2,7 @@
 ### مساعد التوظيف الذكي: للبحث الدقيق وتخصيص السير الذاتية (ATS) والتقديم التلقائي في LinkedIn
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?style=for-the-badge&logo=python" alt="Python Version" />
-  <img src="https://img.shields.io/badge/Streamlit-1.42+-red?style=for-the-badge&logo=streamlit" alt="Streamlit" />
-  <img src="https://img.shields.io/badge/Playwright-Automation-green?style=for-the-badge&logo=playwright" alt="Playwright" />
-  <img src="https://img.shields.io/badge/Google%20Gemini-3.8%20Flash-orange?style=for-the-badge&logo=google" alt="Google Gemini" />
-  <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
+
 </p>
 
 ---
