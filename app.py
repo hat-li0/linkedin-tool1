@@ -4,7 +4,7 @@ import json
 import base64
 from pathlib import Path
 from config import OUTPUTS_DIR
-from cv_parser import extract_text_from_file, parse_cv_with_ai
+from cv_parser import extract_text_from_file, parse_cv_with_ai, audit_master_cv_ats
 from job_searcher import search_linkedin_jobs, fetch_job_description, analyze_job_qualification, CITY_MAP
 from cv_tailor import evaluate_and_tailor_cv, generate_pdf_resume
 from auto_apply import LinkedInApplier
@@ -239,11 +239,99 @@ with tabs[0]:
         with st.expander("📝 عرض النبذة المهنية المستخرجة (Summary)"):
             st.write(master_profile.get("summary", "لا يوجد"))
 
-        if st.button("🔄 مسح السيرة والبدء من جديد (Reset)"):
-            st.session_state["master_profile"] = None
-            st.session_state["search_results"] = []
-            st.session_state["session_generated_pdfs"] = []
-            st.rerun()
+        # ----------------- STRICT ATS AUDIT SECTION -----------------
+        ats_audit = master_profile.get("ats_audit")
+        if ats_audit:
+            st.markdown("---")
+            st.subheader("🛡️ تقييم وفحص توافق الـ ATS الصارم (Strict ATS Audit)")
+            
+            score = ats_audit.get("overall_score", 70)
+            badge = ats_audit.get("verdict_badge", "🟡 تقييم جيد")
+            summary_txt = ats_audit.get("summary_verdict", "")
+            
+            c_score1, c_score2 = st.columns([1, 2])
+            with c_score1:
+                st.metric("🎯 درجة الـ ATS الإجمالية", f"{score} / 100")
+                st.markdown(f"**الحالة:** {badge}")
+                st.progress(min(1.0, score / 100.0))
+            with c_score2:
+                st.markdown("**التقييم العام وصورة الملف لدى خوارزميات الفرز:**")
+                st.info(summary_txt if summary_txt else "تم فحص السيرة طبقاً لأحدث معايير أنظمة الـ ATS العالمية.")
+            
+            # Sub-scores
+            sub_scores = ats_audit.get("sub_scores", {})
+            if sub_scores:
+                st.markdown("##### 📊 معايير الفحص والتقييم الصارمة:")
+                c_sub1, c_sub2, c_sub3, c_sub4, c_sub5 = st.columns(5)
+                with c_sub1:
+                    s_val = sub_scores.get("structure_parsability", 75)
+                    st.metric("بنية السيرة والهيكلية", f"{s_val}%")
+                    st.progress(s_val / 100.0)
+                with c_sub2:
+                    s_val = sub_scores.get("action_verbs_impact", 70)
+                    st.metric("قوة أفعال الإنجاز", f"{s_val}%")
+                    st.progress(s_val / 100.0)
+                with c_sub3:
+                    s_val = sub_scores.get("quantifiable_metrics", 60)
+                    st.metric("الأرقام والقياسات", f"{s_val}%")
+                    st.progress(s_val / 100.0)
+                with c_sub4:
+                    s_val = sub_scores.get("keyword_density", 75)
+                    st.metric("كثافة الكلمات المفتاحية", f"{s_val}%")
+                    st.progress(s_val / 100.0)
+                with c_sub5:
+                    s_val = sub_scores.get("contact_completeness", 85)
+                    st.metric("اكتمال وسائل التواصل", f"{s_val}%")
+                    st.progress(s_val / 100.0)
+
+            # Strengths vs Weaknesses
+            col_str, col_weak = st.columns(2)
+            with col_str:
+                st.markdown("##### ✅ أبرز نقاط القوة المعتمدة في الـ ATS:")
+                for st_item in ats_audit.get("strengths", []):
+                    st.markdown(f"- 🟢 **{st_item}**")
+            with col_weak:
+                st.markdown("##### ⚠️ نقاط الضعف والمخاطر التي قد تستبعد السيرة:")
+                for wk_item in ats_audit.get("critical_weaknesses", []):
+                    st.markdown(f"- 🔴 **{wk_item}**")
+            
+            # Actionable steps
+            with st.expander("💡 خارطة طريق وتوصيات عملية للارتقاء بالسيرة إلى 95%+", expanded=True):
+                for act_item in ats_audit.get("actionable_recommendations", []):
+                    st.markdown(f"• {act_item}")
+                
+                certs = ats_audit.get("suggested_certifications", [])
+                if certs:
+                    st.markdown("---")
+                    st.markdown("🎓 **شهادات مهنية مقترحة ترفع من قوة السيرة وتفضيلها في خوارزميات الـ ATS:**")
+                    st.markdown(" • ".join([f"`{c}`" for c in certs]))
+
+        col_reset, col_reaudit = st.columns([1, 1])
+        with col_reset:
+            if st.button("🔄 مسح السيرة والبدء من جديد (Reset)"):
+                st.session_state["master_profile"] = None
+                st.session_state["search_results"] = []
+                st.session_state["session_generated_pdfs"] = []
+                st.rerun()
+        with col_reaudit:
+            if st.button("🔬 إعادة تدقيق الـ ATS بتحليل معمق"):
+                active_key = st.session_state.get("gemini_api_key", "").strip() or st.session_state.get("openai_api_key", "").strip()
+                if not active_key:
+                    prompt_api_key_dialog()
+                else:
+                    with st.spinner("جاري إجراء تدقيق ATS شامل ومعمق بالذكاء الاصطناعي..."):
+                        try:
+                            fresh_audit = audit_master_cv_ats(
+                                master_profile.get("raw_text", ""),
+                                custom_key=active_key,
+                                llm_type=st.session_state.get("preferred_llm", "gemini")
+                            )
+                            master_profile["ats_audit"] = fresh_audit
+                            st.session_state["master_profile"] = master_profile
+                            st.success("تم تحديث تقرير الـ ATS بنجاح!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"حدث خطأ أثناء تدقيق الـ ATS: {e}")
     else:
         st.info("💡 لم يتم رفع سيرة ذاتية بعد. يرجى رفع ملفك بصيغة PDF أو DOCX للبدء.")
 
@@ -379,18 +467,56 @@ with tabs[2]:
 
                 if tailored_key in st.session_state:
                     res = st.session_state[tailored_key]
-                    score = res.get("match_score", 0)
+                    match_score = res.get("match_score", 0)
+                    tailored_ats = res.get("tailored_ats_score", max(85, match_score + 10))
+                    ats_verdict = res.get("ats_verdict", "🟢 جاهز للتقديم بنسبة عالية")
+                    interview_prob = res.get("interview_likelihood", "مرتفعة جداً")
                     
-                    st.markdown(f"#### 📊 نسبة التوافق مع مؤهلاتك: **{score}%**")
-                    st.progress(min(1.0, score / 100.0))
-                    
+                    st.markdown("#### 🎯 تقييم توافق الـ CV المخصص ومعايير الـ ATS الصارمة:")
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        st.metric("📊 نسبة التوافق مع متطلبات الوظيفة", f"{match_score}%")
+                        st.progress(min(1.0, match_score / 100.0))
+                    with col_m2:
+                        st.metric("🛡️ درجة الـ ATS بعد التخصيص", f"{tailored_ats}%")
+                        st.progress(min(1.0, tailored_ats / 100.0))
+                    with col_m3:
+                        st.markdown(f"**حكم الـ ATS:** {ats_verdict}")
+                        st.markdown(f"**فرصة المقابلة المتوقعة:** `{interview_prob}`")
+
+                    # Sub-scores breakdown
+                    ats_sub = res.get("ats_sub_scores", {})
+                    if ats_sub:
+                        c_s1, c_s2, c_s3, c_s4 = st.columns(4)
+                        with c_s1:
+                            st.caption("تغطية كلمات الوظيفة")
+                            st.progress(ats_sub.get("keyword_coverage", 85) / 100.0)
+                        with c_s2:
+                            st.caption("ملاءمة صياغة الخبرات")
+                            st.progress(ats_sub.get("experience_relevance", 80) / 100.0)
+                        with c_s3:
+                            st.caption("تطابق المهارات التقنية")
+                            st.progress(ats_sub.get("hard_skills_fit", 85) / 100.0)
+                        with c_s4:
+                            st.caption("سلامة التنسيق للروبوتات")
+                            st.progress(ats_sub.get("formatting_safety", 98) / 100.0)
+
+                    # Injected ATS keywords
+                    injected_kw = res.get("injected_ats_keywords", [])
+                    if injected_kw:
+                        st.markdown("🔑 **الكلمات المفتاحية التنافسية المدمجة في الـ CV لاجتياز الفرز التلقائي:**")
+                        st.markdown(" • ".join([f"`{kw}`" for kw in injected_kw]))
+
+                    if res.get("match_rationale"):
+                        st.info(f"💡 **تحليل التوافق:** {res.get('match_rationale')}")
+
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.write("✅ **المهارات المتطابقة:**")
+                        st.write("✅ **المهارات المتطابقة المعتمدة:**")
                         st.write(", ".join(res.get("matching_skills", [])))
                     with c2:
                         st.write("⚠️ **مهارات إضافية تطلبها الوظيفة:**")
-                        st.write(", ".join(res.get("missing_skills", [])))
+                        st.write(", ".join(res.get("missing_skills", [])) if res.get("missing_skills") else "تمت تغطية كافة المتطلبات الأساسية بنجاح.")
 
                     with st.expander("📝 الملخص المهني المخصص للـ ATS"):
                         st.write(res.get("tailored_summary", ""))

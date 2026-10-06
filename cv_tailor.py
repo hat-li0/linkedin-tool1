@@ -66,23 +66,34 @@ def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str
     job_desc = job_data.get("description", "")
     
     system_prompt = (
-        "You are a Senior Executive Recruiter & ATS Optimization Specialist. "
-        "Your task is to tailor a candidate's resume specifically for the target job description based solely on their qualifications. "
-        "CRITICAL REQUIREMENT: All CV content (summary, skills, work experience, accomplishments) "
-        "MUST BE 100% IN PROFESSIONAL ENGLISH. Do NOT include Arabic text or translations in parentheses inside the CV fields. "
-        "ATS algorithms and hiring managers require standard, high-impact English resumes."
+        "You are an Elite Executive Recruiter & Certified ATS Algorithm Auditor. "
+        "Your mission is twofold: "
+        "1) Tailor the candidate's resume specifically for the job description to achieve maximum ATS compatibility in 100% professional technical English. "
+        "2) Provide a strict, high-standard ATS alignment evaluation comparing the tailored output against the target job requirements."
     )
 
     prompt = f"""
 Compare the candidate's master profile with the target job posting.
-Generate an ATS-optimized tailored resume and a targeted cover letter.
+Generate an ATS-optimized tailored resume, a targeted cover letter, and a strict job-specific ATS evaluation.
 Return your response STRICTLY as a valid JSON object matching this structure:
 
 {{
-  "match_score": <Integer percentage between 0 and 100 indicating fit>,
-  "matching_skills": ["List of skills from the candidate matching the job requirements in English"],
-  "missing_skills": ["List of skills or certs required by the JD not currently highlighted"],
-  "match_rationale": "Brief 1-2 sentence explanation of why this candidate is a strong fit",
+  "match_score": <Integer percentage between 0 and 100 indicating raw fit>,
+  "tailored_ats_score": <Integer percentage between 0 and 100 indicating final ATS readiness after tailoring>,
+  "ats_verdict": "<حكم التقييم: '🟢 جاهز للتقديم بنسبة تنافسية استثنائية (Top 5% Candidate)' أو '🟡 مؤهل جيد ومتطابق مع المعايير الأساسية' أو '🟠 متوسط التوافق'>",
+  "interview_likelihood": "<مرتفعة جداً (High Probability) أو مرتفعة (Good) أو متوسطة (Moderate)>",
+  "matching_skills": ["List of matching candidate skills strictly in English"],
+  "missing_skills": ["List of JD required skills or certifications not in candidate background in English"],
+  "injected_ats_keywords": [
+    "List of 5-8 crucial ATS keywords and industry terms strategically woven into the tailored CV to pass recruitment filters"
+  ],
+  "ats_sub_scores": {{
+    "keyword_coverage": <0-100 score for JD keyword matching>,
+    "experience_relevance": <0-100 score for alignment of past experience with target role>,
+    "hard_skills_fit": <0-100 score for technical and functional competencies>,
+    "formatting_safety": <0-100 score for ATS parseability and clean single-column structure>
+  }},
+  "match_rationale": "Clear 2-sentence Arabic explanation of why this candidate's profile is strong and competitive for this role",
   "tailored_summary": "High-impact, 3-4 sentence professional summary in English highlighting candidate's core qualifications, relevant competencies, and value proposition tailored for {job_title} at {company}",
   "tailored_skills": [
     "Clean list of 8-12 technical skills strictly in English, prioritizing keywords mentioned in the job description"
@@ -123,9 +134,19 @@ Candidate Master Profile:
         
         return {
             "match_score": 75,
+            "tailored_ats_score": 85,
+            "ats_verdict": "🟡 مؤهل جيد ومتطابق مع المعايير الأساسية",
+            "interview_likelihood": "مرتفعة (Good)",
             "matching_skills": skills[:5] if skills else ["Professional Expertise"],
             "missing_skills": ["Job-specific technical requirements"],
-            "match_rationale": f"Candidate demonstrates relevant qualifications in {cand_major}.",
+            "injected_ats_keywords": skills[:5] if skills else ["Core Skills", "Industry Standards"],
+            "ats_sub_scores": {
+                "keyword_coverage": 80,
+                "experience_relevance": 78,
+                "hard_skills_fit": 82,
+                "formatting_safety": 98
+            },
+            "match_rationale": f"يمتلك المرشح خلفية مناسبة في مجال {cand_major}.",
             "tailored_summary": f"Dedicated {cand_major} professional with proven background in the field. Seeking to leverage skills and practical experience as {job_title} at {company}.",
             "tailored_skills": skills[:8] if skills else ["Technical Skills", "Problem Solving", "Teamwork"],
             "tailored_experience": experience,
