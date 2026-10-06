@@ -126,7 +126,7 @@ Description:
 \"\"\"
 
 Candidate Master Profile:
-{json.dumps(master_profile, ensure_ascii=False, indent=2)[:7000]}
+{json.dumps({k: v for k, v in master_profile.items() if k not in ("raw_text", "ats_audit")}, ensure_ascii=False, indent=2)[:5000]}
 """
 
     try:

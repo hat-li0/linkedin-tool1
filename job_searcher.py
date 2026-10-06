@@ -124,6 +124,62 @@ def is_title_relevant(title: str, query_keywords: List[str] = None) -> bool:
         return True
     return any(w in t for w in words)
 
+import concurrent.futures
+
+_session = requests.Session()
+_session.headers.update(HEADERS)
+
+def _fetch_keyword_jobs(keyword: str, location_query: str, easy_apply_only: bool) -> List[Dict]:
+    kw_encoded = urllib.parse.quote(f'"{keyword}"' if " " in keyword else keyword)
+    loc_encoded = urllib.parse.quote(location_query)
+    url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={kw_encoded}&location={loc_encoded}&start=0"
+    if easy_apply_only:
+        url += "&f_AL=true"
+    try:
+        res = _session.get(url, timeout=10)
+        if res.status_code != 200:
+            return []
+        soup = BeautifulSoup(res.text, "html.parser")
+        cards = soup.find_all("div", class_="base-search-card")
+        parsed = []
+        for card in cards:
+            job_id_elem = card.get("data-entity-urn", "")
+            job_id_match = re.search(r"\d+", job_id_elem)
+            if not job_id_match:
+                continue
+            job_id = job_id_match.group(0)
+
+            title_elem = card.find("h3", class_="base-search-card__title")
+            title = title_elem.get_text(strip=True) if title_elem else ""
+
+            company_elem = card.find("h4", class_="base-search-card__subtitle")
+            location_elem = card.find("span", class_="job-search-card__location")
+            time_elem = card.find("time", class_="job-search-card__listdate") or card.find("time", class_="job-search-card__listdate--new")
+            link_elem = card.find("a", class_="base-card__full-link")
+
+            company = company_elem.get_text(strip=True) if company_elem else "شركة غير معلنة"
+            location = location_elem.get_text(strip=True) if location_elem else location_query
+            posted_time = time_elem.get_text(strip=True) if time_elem else "مؤخراً"
+            link = link_elem["href"].split("?")[0] if link_elem and "href" in link_elem.attrs else f"https://www.linkedin.com/jobs/view/{job_id}/"
+
+            has_easy_apply = bool(card.find("span", class_="job-result-card__easy-apply") or "Easy Apply" in card.get_text())
+
+            parsed.append({
+                "id": job_id,
+                "title": title,
+                "company": company,
+                "location": location,
+                "posted_time": posted_time,
+                "link": link,
+                "easy_apply": has_easy_apply or easy_apply_only,
+                "search_keyword": keyword,
+                "description": ""
+            })
+        return parsed
+    except Exception as e:
+        print(f"Notice during parallel LinkedIn search for '{keyword}': {e}")
+        return []
+
 def search_linkedin_jobs(
     keywords_list: List[str],
     target_city: str,
@@ -133,7 +189,7 @@ def search_linkedin_jobs(
     max_results: int = 15
 ) -> List[Dict]:
     """
-    Searches LinkedIn for jobs with strict title and degree filtering.
+    Searches LinkedIn for jobs using parallel concurrency with strict title and degree filtering.
     """
     location_query = normalize_city(target_city)
     jobs = []
@@ -142,59 +198,38 @@ def search_linkedin_jobs(
     # Expand keywords into clean single queries
     clean_keywords = []
     for raw_kw in keywords_list:
-        # Split on slashes or commas
         parts = re.split(r"[/,]", raw_kw)
         for p in parts:
             c = clean_query_term(p)
             if c and len(c) > 2 and c not in clean_keywords:
                 clean_keywords.append(c)
 
-    for keyword in clean_keywords:
-        if len(jobs) >= max_results:
-            break
-            
-        kw_encoded = urllib.parse.quote(f'"{keyword}"' if " " in keyword else keyword)
-        loc_encoded = urllib.parse.quote(location_query)
-        
-        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={kw_encoded}&location={loc_encoded}&start=0"
-        if easy_apply_only:
-            url += "&f_AL=true"
-            
-        try:
-            res = requests.get(url, headers=HEADERS, timeout=12)
-            if res.status_code != 200:
-                continue
+    if not clean_keywords:
+        return []
 
-            soup = BeautifulSoup(res.text, "html.parser")
-            cards = soup.find_all("div", class_="base-search-card")
-
-            for card in cards:
+    # Parallel asynchronous fetching across keywords
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(clean_keywords))) as executor:
+        future_to_kw = {
+            executor.submit(_fetch_keyword_jobs, kw, location_query, easy_apply_only): kw
+            for kw in clean_keywords[:6]
+        }
+        for future in concurrent.futures.as_completed(future_to_kw):
+            kw_jobs = future.result()
+            for job in kw_jobs:
                 if len(jobs) >= max_results:
                     break
-
-                job_id_elem = card.get("data-entity-urn", "")
-                job_id_match = re.search(r"\d+", job_id_elem)
-                if not job_id_match:
-                    continue
-                job_id = job_id_match.group(0)
-
+                job_id = job["id"]
                 if job_id in seen_ids:
                     continue
 
-                title_elem = card.find("h3", class_="base-search-card__title")
-                title = title_elem.get_text(strip=True) if title_elem else ""
-
-                # 1. Relevance check
+                title = job["title"]
                 if not is_title_relevant(title):
                     continue
 
                 t_lower = title.lower()
-
-                # 2. Exclude managers if requested
                 if exclude_managers and any(m in t_lower for m in ['director', 'vice president', 'head of', 'manager', 'lead engineer']):
                     continue
 
-                # 3. Technician-only filter if requested
                 if technician_only:
                     is_tech = any(tk in t_lower for tk in [
                         'technician', 'instrument', 'analyzer', 'calibration', 'i&c', 'control',
@@ -204,34 +239,7 @@ def search_linkedin_jobs(
                         continue
 
                 seen_ids.add(job_id)
-
-                company_elem = card.find("h4", class_="base-search-card__subtitle")
-                location_elem = card.find("span", class_="job-search-card__location")
-                time_elem = card.find("time", class_="job-search-card__listdate") or card.find("time", class_="job-search-card__listdate--new")
-                link_elem = card.find("a", class_="base-card__full-link")
-
-                company = company_elem.get_text(strip=True) if company_elem else "شركة غير معلنة"
-                location = location_elem.get_text(strip=True) if location_elem else location_query
-                posted_time = time_elem.get_text(strip=True) if time_elem else "مؤخراً"
-                link = link_elem["href"].split("?")[0] if link_elem and "href" in link_elem.attrs else f"https://www.linkedin.com/jobs/view/{job_id}/"
-
-                has_easy_apply = bool(card.find("span", class_="job-result-card__easy-apply") or "Easy Apply" in card.get_text())
-
-                jobs.append({
-                    "id": job_id,
-                    "title": title,
-                    "company": company,
-                    "location": location,
-                    "posted_time": posted_time,
-                    "link": link,
-                    "easy_apply": has_easy_apply or easy_apply_only,
-                    "search_keyword": keyword,
-                    "description": ""
-                })
-        except Exception as e:
-            print(f"Error searching for {keyword} in {location_query}: {e}")
-
-        time.sleep(0.5)
+                jobs.append(job)
 
     return jobs
 

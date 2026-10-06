@@ -4,10 +4,9 @@ import re
 from config import load_settings
 
 GEMINI_MODELS = [
-    "gemini-2.0-flash",
     "gemini-1.5-flash",
+    "gemini-2.0-flash",
     "gemini-1.5-pro",
-    "gemini-2.5-flash",
     "gemini-flash-latest"
 ]
 
@@ -45,16 +44,21 @@ def get_llm_client(custom_key: str = None, llm_type: str = None):
         return "openai", OpenAI(api_key=openai_key)
     return "none", None
 
-def ask_gemini(prompt: str, system_prompt: str, gemini_key: str) -> str:
+def ask_gemini(prompt: str, system_prompt: str, gemini_key: str, is_json: bool = False) -> str:
     import google.generativeai as genai
     genai.configure(api_key=gemini_key)
+    
+    gen_config = {"temperature": 0.1}
+    if is_json:
+        gen_config["response_mime_type"] = "application/json"
     
     last_error = None
     for model_name in GEMINI_MODELS:
         try:
             model = genai.GenerativeModel(
                 model_name=model_name,
-                system_instruction=system_prompt if system_prompt else None
+                system_instruction=system_prompt if system_prompt else None,
+                generation_config=gen_config
             )
             response = model.generate_content(prompt)
             if response and response.text:
@@ -75,38 +79,43 @@ def ask_gemini(prompt: str, system_prompt: str, gemini_key: str) -> str:
 
     raise ValueError(f"تعذر الاتصال بنماذج Google Gemini المتاحة. آخر خطأ: {last_error}")
 
-def ask_openai(prompt: str, system_prompt: str, openai_key: str) -> str:
+def ask_openai(prompt: str, system_prompt: str, openai_key: str, is_json: bool = False) -> str:
     from openai import OpenAI
     client = OpenAI(api_key=openai_key)
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.2,
-    )
+    
+    kwargs = {
+        "model": "gpt-4o-mini",
+        "messages": messages,
+        "temperature": 0.1,
+    }
+    if is_json:
+        kwargs["response_format"] = {"type": "json_object"}
+        
+    response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content.strip()
 
-def ask_llm(prompt: str, system_prompt: str = "", custom_key: str = None, llm_type: str = None) -> str:
+def ask_llm(prompt: str, system_prompt: str = "", custom_key: str = None, llm_type: str = None, is_json: bool = False) -> str:
     """Sends a prompt to the configured LLM and returns the text output."""
     chosen_type, gemini_key, openai_key = get_active_keys(custom_key=custom_key, llm_type=llm_type)
     
     if chosen_type == "openai" and openai_key:
-        return ask_openai(prompt, system_prompt, openai_key)
+        return ask_openai(prompt, system_prompt, openai_key, is_json=is_json)
     elif gemini_key:
-        return ask_gemini(prompt, system_prompt, gemini_key)
+        return ask_gemini(prompt, system_prompt, gemini_key, is_json=is_json)
     elif openai_key:
-        return ask_openai(prompt, system_prompt, openai_key)
+        return ask_openai(prompt, system_prompt, openai_key, is_json=is_json)
     else:
         raise ValueError("لم يتم إدخال مفتاح الذكاء الاصطناعي (Google Gemini أو OpenAI). يرجى إدخال المفتاح للبدء.")
 
 def ask_llm_json(prompt: str, system_prompt: str = "", custom_key: str = None, llm_type: str = None) -> dict:
-    """Forces the LLM to return valid JSON."""
-    json_instructions = "\nهام جداً: يجب أن تكون إجابتك بصيغة JSON صالحة فقط بدون أي شروحات خارج الـ JSON code block."
+    """Forces the LLM to return valid JSON using native JSON output mode where supported."""
+    json_instructions = "\nهام جداً: يجب أن تكون إجابتك بصيغة JSON صالحة فقط بدون أي شروحات خارج الـ JSON."
     full_prompt = prompt + json_instructions
-    response_text = ask_llm(full_prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
+    response_text = ask_llm(full_prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type, is_json=True)
     
     cleaned = re.sub(r"^```json\s*", "", response_text.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r"^```\s*", "", cleaned.strip(), flags=re.MULTILINE)
