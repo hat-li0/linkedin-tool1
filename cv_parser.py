@@ -1,8 +1,17 @@
-import os
-import re
-from pathlib import Path
-from pypdf import PdfReader
-from docx import Document
+# Safe resilient imports for document readers
+try:
+    from pypdf import PdfReader
+except Exception:
+    try:
+        from PyPDF2 import PdfReader
+    except Exception:
+        PdfReader = None
+
+try:
+    from docx import Document
+except Exception:
+    Document = None
+
 from ai_engine import ask_llm_json
 
 def extract_text_from_file(file_path_or_bytes, filename: str) -> str:
@@ -14,12 +23,16 @@ def extract_text_from_file(file_path_or_bytes, filename: str) -> str:
         file_path_or_bytes.seek(0)
     
     if filename_lower.endswith(".pdf"):
+        if PdfReader is None:
+            raise ImportError("مكتبة قراءة الـ PDF (pypdf) غير متوفرة على الخادم. يرجى رفع الملف بصيغة TXT أو تثبيت pypdf.")
         reader = PdfReader(file_path_or_bytes)
         for page in reader.pages:
             t = page.extract_text()
             if t:
                 text += t + "\n"
     elif filename_lower.endswith(".docx"):
+        if Document is None:
+            raise ImportError("مكتبة قراءة ملفات Word (python-docx) غير متوفرة على الخادم. يرجى رفع الملف بصيغة PDF أو TXT.")
         doc = Document(file_path_or_bytes)
         for p in doc.paragraphs:
             if p.text:

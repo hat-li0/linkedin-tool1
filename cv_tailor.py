@@ -9,9 +9,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import arabic_reshaper
-from bidi.algorithm import get_display
+try:
+    import arabic_reshaper
+except ImportError:
+    arabic_reshaper = None
+
+try:
+    from bidi.algorithm import get_display
+except ImportError:
+    get_display = None
 
 # Register Unicode TrueType Fonts for clean rendering across Windows and Linux
 FONT_NAME = 'Helvetica'
