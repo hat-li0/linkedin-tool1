@@ -580,25 +580,10 @@ def prompt_api_key_dialog():
             st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
 
 # ----------------- MAIN HERO BANNER -----------------
-active_mode = st.session_state.get("selected_device_mode", "auto")
-if active_mode == "desktop":
-    badge_label = "💻 واجهة الكمبيوتر المكتبي (Desktop)"
-elif active_mode == "tablet":
-    badge_label = "📟 واجهة التابلت والآيباد (Tablet / iPad)"
-elif active_mode == "mobile":
-    badge_label = "📱 واجهة الهاتف الجوال (Mobile)"
-else:
-    badge_label = "🌐 متكيف تلقائياً مع نوع شاشتك"
-
-st.markdown(f"""
+st.markdown("""
 <div class="dark-hero">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div>
-            <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
-            <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
-        </div>
-        <div class="device-badge-tag">{badge_label}</div>
-    </div>
+    <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
+    <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
 </div>
 """, unsafe_allow_html=True)
 
