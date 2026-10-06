@@ -35,54 +35,86 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
     
-    * {
+    /* Scoped Typography - NEVER use * !important to avoid breaking Streamlit's Material Icons/Symbols */
+    html, body, p, h1, h2, h3, h4, h5, h6, label, input, textarea, select, button, .stMarkdown, [data-testid="stMarkdownContainer"] {
         font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        box-sizing: border-box;
     }
-    
-    html, body, [data-testid="stAppViewContainer"], .stApp {
-        direction: rtl;
-        text-align: right;
+
+    /* Protect Streamlit internal icon fonts & symbols from Cairo font override */
+    [data-testid="stIcon"],
+    [data-testid="stSidebarCollapseButton"] *,
+    [data-testid="stToolbar"] *,
+    [data-testid="stStatusWidget"] *,
+    [data-testid="stDecoration"] *,
+    .material-symbols-rounded,
+    .material-symbols-outlined,
+    .material-icons,
+    [class*="material-symbols"],
+    [class*="material-icons"] {
+        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+        font-feature-settings: 'liga' 1;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Native Dark Background & Scoped RTL */
+    .stApp {
         background-color: #0B0F19 !important;
         color: #F8FAFC !important;
+    }
+
+    /* Scope RTL direction strictly to the main content container and markdown blocks, leaving header/sidebar chrome LTR */
+    [data-testid="stMainBlockContainer"],
+    .dark-card,
+    .job-card-dark,
+    .stMarkdown,
+    [data-testid="stExpander"],
+    .stAlert {
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* Header styling fix: Ensure header does not collide or wrap icons */
+    [data-testid="stHeader"] {
+        background: rgba(11, 15, 25, 0.85) !important;
+        backdrop-filter: blur(8px);
     }
 
     /* Container Spacing & Mobile Responsive Padding */
     .block-container {
         padding-top: 1.2rem !important;
         padding-bottom: 3.5rem !important;
-        max-width: 1080px !important;
+        max-width: 1040px !important;
     }
 
     @media (max-width: 768px) {
         .block-container {
             padding-left: 0.75rem !important;
             padding-right: 0.75rem !important;
-            padding-top: 0.8rem !important;
+            padding-top: 0.75rem !important;
         }
     }
 
-    /* Hero Header - Cyber Glow */
+    /* Hero Header - Sleek Modern Dark Banner */
     .dark-hero {
         background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
         border: 1px solid rgba(56, 189, 248, 0.25);
-        border-radius: 18px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        position: relative;
-        overflow: hidden;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        direction: rtl;
+        text-align: right;
     }
     .dark-hero-title {
-        font-size: clamp(1.4rem, 4.5vw, 2rem);
-        font-weight: 900;
-        margin: 0 0 8px 0;
+        font-size: clamp(1.25rem, 4vw, 1.85rem);
+        font-weight: 800;
+        margin: 0 0 6px 0;
         background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     .dark-hero-desc {
-        font-size: clamp(0.85rem, 2.5vw, 1rem);
+        font-size: clamp(0.85rem, 2.3vw, 0.95rem);
         color: #94A3B8;
         margin: 0;
         line-height: 1.6;
@@ -93,8 +125,8 @@ st.markdown("""
         background: #161F30;
         border: 1px solid #283548;
         border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
+        padding: 18px;
+        margin-bottom: 14px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
@@ -102,22 +134,21 @@ st.markdown("""
         background: #161F30;
         border: 1px solid #283548;
         border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
+        padding: 18px;
+        margin-bottom: 14px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         transition: all 0.2s ease;
     }
     .job-card-dark:hover {
         border-color: #38BDF8;
         box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
-        transform: translateY(-2px);
     }
 
     /* Glowing Dark Chips */
     .chip {
         display: inline-flex;
         align-items: center;
-        padding: 5px 12px;
+        padding: 4px 12px;
         border-radius: 9999px;
         font-size: 13px;
         font-weight: 700;
@@ -167,34 +198,33 @@ st.markdown("""
     }
     .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {
         box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
-        transform: translateY(-1px);
     }
     @media (max-width: 768px) {
         .stButton > button, .stDownloadButton > button {
             width: 100% !important;
-            min-height: 50px !important;
-            font-size: 16px !important;
-            margin-top: 6px !important;
-            margin-bottom: 6px !important;
+            min-height: 48px !important;
+            font-size: 15px !important;
+            margin-top: 4px !important;
+            margin-bottom: 4px !important;
         }
     }
 
     /* Dark Mode Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 6px;
         overflow-x: auto;
         flex-wrap: nowrap;
-        padding-bottom: 8px;
+        padding-bottom: 6px;
         scrollbar-width: none;
     }
     .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
         display: none;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 12px;
-        padding: 9px 16px;
+        border-radius: 10px;
+        padding: 8px 14px;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 13px;
         white-space: nowrap;
         background-color: #161F30;
         border: 1px solid #283548;
@@ -205,16 +235,16 @@ st.markdown("""
         color: #0F172A !important;
         font-weight: 800 !important;
         border-color: #38BDF8 !important;
-        box-shadow: 0 2px 12px rgba(56, 189, 248, 0.3) !important;
+        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3) !important;
     }
 
     /* Dark Mode Metrics */
     [data-testid="stMetric"] {
         background: #161F30 !important;
         border: 1px solid #283548 !important;
-        border-radius: 14px !important;
-        padding: 14px 16px !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+        border-radius: 12px !important;
+        padding: 12px 14px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stMetricLabel"] {
         font-weight: 700 !important;
@@ -224,7 +254,7 @@ st.markdown("""
     [data-testid="stMetricValue"] {
         font-weight: 900 !important;
         color: #38BDF8 !important;
-        font-size: 22px !important;
+        font-size: 20px !important;
     }
 
     /* Dark Expanders */
@@ -375,10 +405,10 @@ if not has_key:
 master_profile = st.session_state.get("master_profile", None)
 
 tabs = st.tabs([
-    "1️⃣ السيرة الأساسية وفحص الـ ATS",
-    "2️⃣ اختيار المدينة والبحث",
-    "3️⃣ الوظائف والـ CV المخصص",
-    "📁 ملفات الـ CV المجهزة"
+    "📄 السيرة و ATS",
+    "🔍 البحث عن وظائف",
+    "🎯 تخصيص الـ CV",
+    "📁 ملفاتي"
 ])
 
 # ----------------- TAB 1: MASTER CV & ATS AUDIT -----------------
