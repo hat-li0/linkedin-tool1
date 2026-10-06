@@ -310,13 +310,11 @@ def prompt_api_key_dialog():
     👉 [**اضغط هنا لفتح Google AI Studio ونسخ المفتاح مجاناً**](https://aistudio.google.com/app/apikey)
     """)
     
-    new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password", placeholder="AIzaSy...")
+    new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password")
     
     if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
         clean_key = new_key.strip()
         if clean_key:
-            if not clean_key.startswith("AIzaSy"):
-                st.warning("⚠️ تنبيه: مفتاح Google Gemini يبدأ عادة بـ `AIzaSy...`. يرجى التأكد من نسخه بدقة من الرابط أعلاه.")
             st.session_state["gemini_api_key"] = clean_key
             st.session_state["preferred_llm"] = "gemini"
             st.session_state["auto_trigger_analysis"] = True

@@ -67,7 +67,7 @@ def ask_gemini(prompt: str, system_prompt: str, gemini_key: str) -> str:
                 continue
             # If invalid API key, fail fast with a friendly message
             if "API_KEY_INVALID" in err_msg or "API key not valid" in err_msg or "400" in err_msg:
-                raise ValueError("مفتاح Google Gemini API غير صالح. يرجى التأكد من نسخ المفتاح الصحيح الذي يبدأ بـ AIzaSy... من Google AI Studio.")
+                raise ValueError("مفتاح Google Gemini API غير صالح. يرجى التأكد من نسخه بدقة من Google AI Studio.")
             # If quota exceeded
             if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
                 raise ValueError("تم تجاوز حد الاستخدام المسموح لمفتاح Gemini (Quota Exceeded). يرجى استخدام مفتاح آخر أو المحاولة لاحقاً.")
