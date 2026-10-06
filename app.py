@@ -30,160 +30,227 @@ if "search_results" not in st.session_state:
 if "session_generated_pdfs" not in st.session_state:
     st.session_state["session_generated_pdfs"] = []
 
-# Modern, Mobile-First Arabic Responsive Styling
+# ==================== LUXURY DARK MODE STYLING ====================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
     
     * {
         font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        box-sizing: border-box;
     }
     
     html, body, [data-testid="stAppViewContainer"], .stApp {
         direction: rtl;
         text-align: right;
-        background-color: #F8FAFC;
+        background-color: #0B0F19 !important;
+        color: #F8FAFC !important;
     }
 
     /* Container Spacing & Mobile Responsive Padding */
     .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 3rem !important;
-        max-width: 1100px !important;
+        padding-top: 1.2rem !important;
+        padding-bottom: 3.5rem !important;
+        max-width: 1080px !important;
     }
 
     @media (max-width: 768px) {
         .block-container {
             padding-left: 0.75rem !important;
             padding-right: 0.75rem !important;
-            padding-top: 1rem !important;
+            padding-top: 0.8rem !important;
         }
     }
 
-    /* Hero Header */
-    .hero-banner {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        border: 1px solid #334155;
-        border-radius: 16px;
-        padding: 22px 24px;
-        color: white;
+    /* Hero Header - Cyber Glow */
+    .dark-hero {
+        background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-radius: 18px;
+        padding: 24px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
     }
-    .hero-title {
-        font-size: clamp(1.3rem, 4vw, 1.8rem);
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        color: #FFFFFF;
+    .dark-hero-title {
+        font-size: clamp(1.4rem, 4.5vw, 2rem);
+        font-weight: 900;
+        margin: 0 0 8px 0;
+        background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-    .hero-subtitle {
+    .dark-hero-desc {
         font-size: clamp(0.85rem, 2.5vw, 1rem);
         color: #94A3B8;
         margin: 0;
         line-height: 1.6;
     }
 
-    /* Modern Card Styles */
-    .ui-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 14px;
-        padding: 18px;
+    /* Dark Cards & Surfaces */
+    .dark-card {
+        background: #161F30;
+        border: 1px solid #283548;
+        border-radius: 16px;
+        padding: 20px;
         margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
-    .job-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 14px;
-        padding: 18px 20px;
+    .job-card-dark {
+        background: #161F30;
+        border: 1px solid #283548;
+        border-radius: 16px;
+        padding: 20px;
         margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        transition: all 0.2s ease;
     }
-    .job-card:hover {
-        border-color: #0284C7;
-        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.08);
+    .job-card-dark:hover {
+        border-color: #38BDF8;
+        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+        transform: translateY(-2px);
     }
 
-    /* Badges & Chips */
+    /* Glowing Dark Chips */
     .chip {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 8px;
+        padding: 5px 12px;
+        border-radius: 9999px;
         font-size: 13px;
         font-weight: 700;
         margin: 3px 4px 3px 0;
     }
-    .chip-blue { background: #E0F2FE; color: #0369A1; }
-    .chip-green { background: #DCFCE7; color: #15803D; }
-    .chip-amber { background: #FEF3C7; color: #B45309; }
-    .chip-purple { background: #F3E8FF; color: #7E22CE; }
-    .chip-slate { background: #F1F5F9; color: #475569; }
+    .chip-cyan {
+        background: rgba(56, 189, 248, 0.12);
+        color: #38BDF8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .chip-emerald {
+        background: rgba(52, 211, 153, 0.12);
+        color: #34D399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .chip-amber {
+        background: rgba(251, 191, 36, 0.12);
+        color: #FBBF24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .chip-purple {
+        background: rgba(192, 132, 252, 0.12);
+        color: #C084FC;
+        border: 1px solid rgba(192, 132, 252, 0.3);
+    }
 
-    /* Touch-friendly Buttons */
-    .stButton > button, .stDownloadButton > button {
-        border-radius: 10px !important;
-        font-weight: 700 !important;
-        padding: 0.55rem 1.2rem !important;
+    /* Touch-Friendly Dark Buttons */
+    .stButton > button {
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+        padding: 0.6rem 1.4rem !important;
+        font-size: 15px !important;
         transition: all 0.2s ease !important;
+        border: 1px solid #334155 !important;
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+    }
+    .stButton > button:hover {
+        border-color: #38BDF8 !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+    }
+    .stButton > button[kind="primary"], .stDownloadButton > button {
+        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
+        color: #0F172A !important;
+        border: none !important;
+        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35) !important;
+    }
+    .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {
+        box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
+        transform: translateY(-1px);
     }
     @media (max-width: 768px) {
         .stButton > button, .stDownloadButton > button {
             width: 100% !important;
-            min-height: 48px !important;
-            font-size: 15px !important;
-            margin-top: 4px !important;
-            margin-bottom: 4px !important;
+            min-height: 50px !important;
+            font-size: 16px !important;
+            margin-top: 6px !important;
+            margin-bottom: 6px !important;
         }
     }
 
-    /* Horizontal Smooth Tabs for Mobile */
+    /* Dark Mode Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
+        gap: 8px;
         overflow-x: auto;
         flex-wrap: nowrap;
-        padding-bottom: 6px;
+        padding-bottom: 8px;
         scrollbar-width: none;
     }
     .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
         display: none;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 8px 14px;
+        border-radius: 12px;
+        padding: 9px 16px;
         font-weight: 700;
         font-size: 14px;
         white-space: nowrap;
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        color: #475569;
+        background-color: #161F30;
+        border: 1px solid #283548;
+        color: #94A3B8;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #0284C7 !important;
-        color: #FFFFFF !important;
-        border-color: #0284C7 !important;
+        background: linear-gradient(135deg, #0284C7, #38BDF8) !important;
+        color: #0F172A !important;
+        font-weight: 800 !important;
+        border-color: #38BDF8 !important;
+        box-shadow: 0 2px 12px rgba(56, 189, 248, 0.3) !important;
     }
 
-    /* Metrics Cards */
+    /* Dark Mode Metrics */
     [data-testid="stMetric"] {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 12px 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        background: #161F30 !important;
+        border: 1px solid #283548 !important;
+        border-radius: 14px !important;
+        padding: 14px 16px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
     }
     [data-testid="stMetricLabel"] {
-        font-weight: 700;
-        color: #64748B;
+        font-weight: 700 !important;
+        color: #94A3B8 !important;
         font-size: 13px !important;
     }
     [data-testid="stMetricValue"] {
-        font-weight: 800;
-        color: #0F172A;
-        font-size: 20px !important;
+        font-weight: 900 !important;
+        color: #38BDF8 !important;
+        font-size: 22px !important;
+    }
+
+    /* Dark Expanders */
+    .streamlit-expanderHeader {
+        background-color: #161F30 !important;
+        border-radius: 12px !important;
+        border: 1px solid #283548 !important;
+        color: #F8FAFC !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stExpander"] {
+        background-color: #161F30 !important;
+        border: 1px solid #283548 !important;
+        border-radius: 14px !important;
+    }
+
+    /* Dark Input fields */
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        color: #F8FAFC !important;
+        border-radius: 10px !important;
+    }
+    .stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus {
+        border-color: #38BDF8 !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -192,10 +259,10 @@ def render_pdf_preview(pdf_bytes: bytes, height: int = 540):
     """Renders a responsive PDF preview with fallback for mobile devices."""
     b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
     pdf_html = f'''
-    <div style="margin: 12px 0; border: 1px solid #CBD5E1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); background: white;">
+    <div style="margin: 12px 0; border: 1px solid #334155; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); background: #1E293B;">
         <iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="{height}px" type="application/pdf" style="border: none;">
-            <p style="padding: 16px; text-align: center; color: #64748B;">
-                📱 جهازك لا يدعم المعاينة المباشرة داخل المتصفح. يمكنك تحميل الملف فوراً عبر زر التحميل أدناه.
+            <p style="padding: 20px; text-align: center; color: #94A3B8;">
+                📱 جهازك لا يدعم المعاينة المباشرة داخل المتصفح. اضغط على زر التحميل أدناه لحفظ الملف فوراً.
             </p>
         </iframe>
     </div>
@@ -287,11 +354,11 @@ with st.sidebar:
             else:
                 st.warning(res.get("message", "تم إغلاق المتصفح."))
 
-# ----------------- MAIN HERO HEADER -----------------
+# ----------------- MAIN HERO BANNER -----------------
 st.markdown("""
-<div class="hero-banner">
-    <h1 class="hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
-    <p class="hero-subtitle">ارفع سيرتك الذاتية، افحص توافق الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
+<div class="dark-hero">
+    <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
+    <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -302,7 +369,7 @@ if not has_key:
     with c_banner1:
         st.info("💡 للبدء بتحليل السيرة وفحص الـ ATS وتخصيص الـ CV، يلزم إدخال مفتاح Google Gemini (مجاني وفوري 100%).")
     with c_banner2:
-        if st.button("🔑 إدخال المفتاح المجاني الآن"):
+        if st.button("🔑 إدخال المفتاح المجاني الآن", type="primary"):
             prompt_api_key_dialog()
 
 master_profile = st.session_state.get("master_profile", None)
@@ -317,7 +384,7 @@ tabs = st.tabs([
 # ----------------- TAB 1: MASTER CV & ATS AUDIT -----------------
 with tabs[0]:
     st.subheader("📄 رفع السيرة الذاتية وفحص الـ ATS (Master CV)")
-    st.caption("ارفع سيرتك الذاتية ليقوم الذكاء الاصطناعي باستخراج تخصصك بدقة وتقييم جاهزيتها لأنظمة الـ ATS:")
+    st.caption("ارفع سيرتك الذاتية ليقوم الذكاء الاصطناعي باستخراج تخصصك بدقة وفحص جاهزيتها لأنظمة الـ ATS العالمية:")
     
     uploaded_file = st.file_uploader(
         "اختر ملف السيرة الذاتية (PDF أو Word أو TXT):",
@@ -357,7 +424,7 @@ with tabs[0]:
         st.markdown("---")
         st.subheader("📋 البيانات المستخرجة من سيرتك الذاتية:")
         
-        # Responsive 2-column on mobile / 3 on desktop
+        # Responsive 2-column layout
         col1, col2 = st.columns([1, 1])
         with col1:
             st.metric("👤 الاسم", master_profile.get("name", "غير محدد"))
@@ -397,7 +464,7 @@ with tabs[0]:
                 st.markdown("**التقييم العام وخوارزميات الفرز:**")
                 st.info(summary_txt if summary_txt else "تم فحص السيرة طبقاً لأحدث معايير أنظمة الـ ATS العالمية.")
             
-            # Mobile-friendly 2-row sub-scores
+            # Responsive 2-column sub-scores
             sub_scores = ats_audit.get("sub_scores", {})
             if sub_scores:
                 st.markdown("##### 📊 معايير الفحص والتقييم الصارمة:")
@@ -556,17 +623,17 @@ with tabs[2]:
             
             with st.container():
                 st.markdown(f"""
-                <div class="job-card">
-                    <h3 style="margin: 0 0 6px 0; color: #0F172A; font-size: 1.15rem;">{job['title']}</h3>
-                    <p style="margin: 0 0 10px 0; color: #475569; font-weight: 600; font-size: 0.9rem;">
-                        🏢 {job['company']} &nbsp; | &nbsp; 📍 {job['location']} &nbsp; | &nbsp; 🕒 {job['posted_time']}
+                <div class="job-card-dark">
+                    <h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{job['title']}</h3>
+                    <p style="margin: 0 0 12px 0; color: #94A3B8; font-weight: 600; font-size: 0.9rem;">
+                        🏢 {job['company']} &nbsp; • &nbsp; 📍 {job['location']} &nbsp; • &nbsp; 🕒 {job['posted_time']}
                     </p>
-                    <div style="margin-bottom: 10px;">
-                        <span class="chip chip-blue">👨‍🔧 {analysis['role_type']}</span>
-                        <span class="chip chip-green">🎓 {analysis['degree_match']}</span>
+                    <div style="margin-bottom: 12px;">
+                        <span class="chip chip-cyan">👨‍🔧 {analysis['role_type']}</span>
+                        <span class="chip chip-emerald">🎓 {analysis['degree_match']}</span>
                         <span class="chip chip-amber">⏳ {analysis['experience_level']}</span>
                     </div>
-                    <p style="margin: 4px 0;"><a href="{job['link']}" target="_blank" style="color: #0284C7; text-decoration: none; font-weight: 700;">🔗 فتح رابط الوظيفة في LinkedIn</a></p>
+                    <p style="margin: 4px 0;"><a href="{job['link']}" target="_blank" style="color: #38BDF8; text-decoration: none; font-weight: 700;">🔗 فتح رابط الوظيفة في LinkedIn ↗</a></p>
                 </div>
                 """, unsafe_allow_html=True)
                 
