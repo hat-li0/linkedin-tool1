@@ -128,6 +128,8 @@ desktop_css_rules = """
         font-size: 1.05rem !important;
     }
     .stTabs [data-baseweb="tab-list"] {
+        justify-content: flex-start !important;
+        direction: rtl !important;
         gap: 10px !important;
         padding-bottom: 10px !important;
     }
@@ -187,6 +189,8 @@ tablet_css_rules = """
         font-size: 0.95rem !important;
     }
     .stTabs [data-baseweb="tab-list"] {
+        justify-content: flex-start !important;
+        direction: rtl !important;
         gap: 8px !important;
         padding-bottom: 8px !important;
     }
@@ -255,6 +259,8 @@ mobile_css_rules = """
         line-height: 1.5 !important;
     }
     .stTabs [data-baseweb="tab-list"] {
+        justify-content: flex-start !important;
+        direction: rtl !important;
         gap: 5px !important;
         padding-bottom: 6px !important;
         overflow-x: auto !important;
@@ -479,6 +485,9 @@ st.markdown(f"""
 
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {{
+        justify-content: flex-start !important;
+        direction: rtl !important;
+        gap: 8px !important;
         scrollbar-width: none;
     }}
     .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{
@@ -497,6 +506,20 @@ st.markdown(f"""
         font-weight: 800 !important;
         border-color: #38BDF8 !important;
         box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3) !important;
+    }}
+
+    /* File Uploader Fix: Keep internal dropzone in LTR so Browse button & text never collide */
+    [data-testid="stFileUploader"] {{
+        direction: ltr !important;
+    }}
+    [data-testid="stFileUploader"] section {{
+        direction: ltr !important;
+        text-align: left !important;
+    }}
+    [data-testid="stFileUploaderDropzone"] {{
+        direction: ltr !important;
+        text-align: left !important;
+        padding: 1rem 1.5rem !important;
     }}
 
     /* Metrics & Expanders */
@@ -590,11 +613,11 @@ st.markdown("""
 # Quick Key Check for Mobile Users
 has_key = bool(st.session_state.get("gemini_api_key", "").strip() or st.session_state.get("openai_api_key", "").strip())
 if not has_key:
-    c_banner1, c_banner2 = st.columns([3, 1])
+    c_banner1, c_banner2 = st.columns([2.7, 1.3])
     with c_banner1:
         st.info("💡 للبدء بتحليل السيرة وفحص الـ ATS وتخصيص الـ CV، يلزم إدخال مفتاح Google Gemini (مجاني وفوري 100%).")
     with c_banner2:
-        if st.button("🔑 إدخال المفتاح المجاني الآن", type="primary"):
+        if st.button("🔑 إدخال المفتاح مجاناً", type="primary"):
             prompt_api_key_dialog()
 
 master_profile = st.session_state.get("master_profile", None)
