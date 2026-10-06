@@ -30,300 +30,11 @@ if "search_results" not in st.session_state:
 if "session_generated_pdfs" not in st.session_state:
     st.session_state["session_generated_pdfs"] = []
 
-# ==================== LUXURY DARK MODE STYLING ====================
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
-    
-    /* Scoped Typography - NEVER use * !important to avoid breaking Streamlit's Material Icons/Symbols */
-    html, body, p, h1, h2, h3, h4, h5, h6, label, input, textarea, select, button, .stMarkdown, [data-testid="stMarkdownContainer"] {
-        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    }
+# ==================== MULTI-DEVICE RESPONSIVE DARK THEME ====================
+if "selected_device_mode" not in st.session_state:
+    st.session_state["selected_device_mode"] = "auto"
 
-    /* Protect Streamlit internal icon fonts & symbols from Cairo font override */
-    [data-testid="stIcon"],
-    [data-testid="stSidebarCollapseButton"] *,
-    [data-testid="stToolbar"] *,
-    [data-testid="stStatusWidget"] *,
-    [data-testid="stDecoration"] *,
-    .material-symbols-rounded,
-    .material-symbols-outlined,
-    .material-icons,
-    [class*="material-symbols"],
-    [class*="material-icons"] {
-        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
-        font-feature-settings: 'liga' 1;
-        text-rendering: optimizeLegibility;
-    }
-
-    /* Native Dark Background & Scoped RTL */
-    .stApp {
-        background-color: #0B0F19 !important;
-        color: #F8FAFC !important;
-    }
-
-    /* Scope RTL direction strictly to the main content container and markdown blocks, leaving header/sidebar chrome LTR */
-    [data-testid="stMainBlockContainer"],
-    .dark-card,
-    .job-card-dark,
-    .stMarkdown,
-    [data-testid="stExpander"],
-    .stAlert {
-        direction: rtl;
-        text-align: right;
-    }
-
-    /* Header styling fix: Ensure header does not collide or wrap icons */
-    [data-testid="stHeader"] {
-        background: rgba(11, 15, 25, 0.85) !important;
-        backdrop-filter: blur(8px);
-    }
-
-    /* Container Spacing & Mobile Responsive Padding */
-    .block-container {
-        padding-top: 1.2rem !important;
-        padding-bottom: 3.5rem !important;
-        max-width: 1040px !important;
-    }
-
-    @media (max-width: 768px) {
-        .block-container {
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-            padding-top: 0.75rem !important;
-        }
-    }
-
-    /* Hero Header - Sleek Modern Dark Banner */
-    .dark-hero {
-        background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        direction: rtl;
-        text-align: right;
-    }
-    .dark-hero-title {
-        font-size: clamp(1.25rem, 4vw, 1.85rem);
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .dark-hero-desc {
-        font-size: clamp(0.85rem, 2.3vw, 0.95rem);
-        color: #94A3B8;
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    /* Dark Cards & Surfaces */
-    .dark-card {
-        background: #161F30;
-        border: 1px solid #283548;
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 14px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    }
-
-    .job-card-dark {
-        background: #161F30;
-        border: 1px solid #283548;
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 14px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-        transition: all 0.2s ease;
-    }
-    .job-card-dark:hover {
-        border-color: #38BDF8;
-        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
-    }
-
-    /* Glowing Dark Chips */
-    .chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 12px;
-        border-radius: 9999px;
-        font-size: 13px;
-        font-weight: 700;
-        margin: 3px 4px 3px 0;
-    }
-    .chip-cyan {
-        background: rgba(56, 189, 248, 0.12);
-        color: #38BDF8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-    .chip-emerald {
-        background: rgba(52, 211, 153, 0.12);
-        color: #34D399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-    .chip-amber {
-        background: rgba(251, 191, 36, 0.12);
-        color: #FBBF24;
-        border: 1px solid rgba(251, 191, 36, 0.3);
-    }
-    .chip-purple {
-        background: rgba(192, 132, 252, 0.12);
-        color: #C084FC;
-        border: 1px solid rgba(192, 132, 252, 0.3);
-    }
-
-    /* Touch-Friendly Dark Buttons */
-    .stButton > button {
-        border-radius: 12px !important;
-        font-weight: 800 !important;
-        padding: 0.6rem 1.4rem !important;
-        font-size: 15px !important;
-        transition: all 0.2s ease !important;
-        border: 1px solid #334155 !important;
-        background-color: #1E293B !important;
-        color: #F8FAFC !important;
-    }
-    .stButton > button:hover {
-        border-color: #38BDF8 !important;
-        box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
-    }
-    .stButton > button[kind="primary"], .stDownloadButton > button {
-        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
-        color: #0F172A !important;
-        border: none !important;
-        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35) !important;
-    }
-    .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {
-        box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
-    }
-    @media (max-width: 768px) {
-        .stButton > button, .stDownloadButton > button {
-            width: 100% !important;
-            min-height: 48px !important;
-            font-size: 15px !important;
-            margin-top: 4px !important;
-            margin-bottom: 4px !important;
-        }
-    }
-
-    /* Dark Mode Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: 6px;
-        scrollbar-width: none;
-    }
-    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
-        display: none;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 8px 14px;
-        font-weight: 700;
-        font-size: 13px;
-        white-space: nowrap;
-        background-color: #161F30;
-        border: 1px solid #283548;
-        color: #94A3B8;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #0284C7, #38BDF8) !important;
-        color: #0F172A !important;
-        font-weight: 800 !important;
-        border-color: #38BDF8 !important;
-        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3) !important;
-    }
-
-    /* Dark Mode Metrics */
-    [data-testid="stMetric"] {
-        background: #161F30 !important;
-        border: 1px solid #283548 !important;
-        border-radius: 12px !important;
-        padding: 12px 14px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-weight: 700 !important;
-        color: #94A3B8 !important;
-        font-size: 13px !important;
-    }
-    [data-testid="stMetricValue"] {
-        font-weight: 900 !important;
-        color: #38BDF8 !important;
-        font-size: 20px !important;
-    }
-
-    /* Dark Expanders */
-    .streamlit-expanderHeader {
-        background-color: #161F30 !important;
-        border-radius: 12px !important;
-        border: 1px solid #283548 !important;
-        color: #F8FAFC !important;
-        font-weight: 700 !important;
-    }
-    [data-testid="stExpander"] {
-        background-color: #161F30 !important;
-        border: 1px solid #283548 !important;
-        border-radius: 14px !important;
-    }
-
-    /* Dark Input fields */
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        background-color: #161F30 !important;
-        border: 1px solid #334155 !important;
-        color: #F8FAFC !important;
-        border-radius: 10px !important;
-    }
-    .stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus {
-        border-color: #38BDF8 !important;
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2) !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-def render_pdf_preview(pdf_bytes: bytes, height: int = 540):
-    """Renders a responsive PDF preview with fallback for mobile devices."""
-    b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    pdf_html = f'''
-    <div style="margin: 12px 0; border: 1px solid #334155; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); background: #1E293B;">
-        <iframe src="data:application/pdf;base64,{b64_pdf}" width="100%" height="{height}px" type="application/pdf" style="border: none;">
-            <p style="padding: 20px; text-align: center; color: #94A3B8;">
-                📱 جهازك لا يدعم المعاينة المباشرة داخل المتصفح. اضغط على زر التحميل أدناه لحفظ الملف فوراً.
-            </p>
-        </iframe>
-    </div>
-    '''
-    st.markdown(pdf_html, unsafe_allow_html=True)
-
-@st.dialog("🔑 مطلوب إدخال مفتاح Google Gemini للبدء")
-def prompt_api_key_dialog():
-    st.markdown("""
-    **مرحباً بك!** 👋  
-    لقراءة سيرتك الذاتية وتحديد تخصصك ومؤهلاتك بدقة وفحص الـ ATS وتخصيص الـ CV، يلزم إدخال مفتاح **Google Gemini**.
-    
-    ✨ **المفتاح مجاني 100% وفوري وبدون أي اشتراك أو بطاقة بنكية!**  
-    احصل على مفتاحك المجاني خلال ثوانٍ من الرابط التالي:  
-    👉 [**اضغط هنا لفتح Google AI Studio ونسخ المفتاح مجاناً**](https://aistudio.google.com/app/apikey)
-    """)
-    
-    new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password")
-    
-    if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
-        clean_key = new_key.strip()
-        if clean_key:
-            st.session_state["gemini_api_key"] = clean_key
-            st.session_state["preferred_llm"] = "gemini"
-            st.session_state["auto_trigger_analysis"] = True
-            st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
-            st.rerun()
-        else:
-            st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
-
-# ----------------- SIDEBAR SETTINGS -----------------
+# ----------------- SIDEBAR SETTINGS & DEVICE SELECTOR -----------------
 with st.sidebar:
     st.header("⚙️ إعدادات الذكاء الاصطناعي")
     
@@ -358,6 +69,22 @@ with st.sidebar:
         st.success("تم حفظ الإعدادات بنجاح!")
 
     st.markdown("---")
+    st.header("🖥️ نمط العرض ونوع الجهاز")
+    st.caption("يتكيف الموقع تلقائياً مع حجم شاشة جهازك، أو يمكنك التبديل بين الواجهات يدوياً:")
+    current_device = st.selectbox(
+        "واجهة العرض:",
+        options=["auto", "desktop", "tablet", "mobile"],
+        format_func=lambda x: {
+            "auto": "🌐 تلقائي (حسب شاشة جهازك الذكي)",
+            "desktop": "💻 كمبيوتر مكتبي (Desktop Layout)",
+            "tablet": "📟 تابلت / آيباد (iPad / Tablet)",
+            "mobile": "📱 هاتف جوال (Mobile Layout)"
+        }[x],
+        index=["auto", "desktop", "tablet", "mobile"].index(st.session_state.get("selected_device_mode", "auto")),
+        key="selected_device_mode"
+    )
+
+    st.markdown("---")
     st.subheader("🌐 جلسة لينكدين للتقديم")
     st.caption("ميزة اختيارية لتشغيل التقديم التلقائي على جهاز الكمبيوتر:")
     
@@ -382,11 +109,496 @@ with st.sidebar:
             else:
                 st.warning(res.get("message", "تم إغلاق المتصفح."))
 
+# ----------------- DYNAMIC CSS GENERATION -----------------
+desktop_css_rules = """
+    .block-container {
+        max-width: 1160px !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 4rem !important;
+    }
+    .dark-hero {
+        border-radius: 20px !important;
+        padding: 26px 32px !important;
+        margin-bottom: 20px !important;
+    }
+    .dark-hero-title {
+        font-size: 1.95rem !important;
+    }
+    .dark-hero-desc {
+        font-size: 1.05rem !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 12px !important;
+        padding: 10px 22px !important;
+        font-size: 15px !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        gap: 16px !important;
+    }
+    .dark-card, .job-card-dark {
+        padding: 22px 26px !important;
+        border-radius: 18px !important;
+        margin-bottom: 16px !important;
+    }
+    [data-testid="stMetric"] {
+        border-radius: 14px !important;
+        padding: 16px 18px !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 14px !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 24px !important;
+    }
+    .stButton > button, .stDownloadButton > button {
+        padding: 0.65rem 1.6rem !important;
+        font-size: 15px !important;
+        min-height: 44px !important;
+    }
+    .chip {
+        padding: 5px 14px !important;
+        font-size: 13.5px !important;
+        margin: 4px 6px 4px 0 !important;
+    }
+    .pdf-iframe {
+        height: 640px !important;
+    }
+"""
+
+tablet_css_rules = """
+    .block-container {
+        max-width: 860px !important;
+        padding: 1.2rem 1.4rem 3.5rem 1.4rem !important;
+    }
+    .dark-hero {
+        border-radius: 16px !important;
+        padding: 20px 24px !important;
+        margin-bottom: 16px !important;
+    }
+    .dark-hero-title {
+        font-size: 1.6rem !important;
+    }
+    .dark-hero-desc {
+        font-size: 0.95rem !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        padding-bottom: 8px !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px !important;
+        padding: 9px 18px !important;
+        font-size: 14px !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        flex: 1 1 calc(50% - 12px) !important;
+        min-width: 45% !important;
+    }
+    .dark-card, .job-card-dark {
+        padding: 18px 20px !important;
+        border-radius: 16px !important;
+        margin-bottom: 14px !important;
+    }
+    [data-testid="stMetric"] {
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 13px !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 21px !important;
+    }
+    .stButton > button, .stDownloadButton > button {
+        min-height: 48px !important;
+        font-size: 15px !important;
+        padding: 0.6rem 1.4rem !important;
+    }
+    .chip {
+        padding: 4px 12px !important;
+        font-size: 13px !important;
+        margin: 3px 4px 3px 0 !important;
+    }
+    .pdf-iframe {
+        height: 520px !important;
+    }
+"""
+
+mobile_css_rules = """
+    .block-container {
+        max-width: 100% !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        padding-top: 0.6rem !important;
+        padding-bottom: 3.5rem !important;
+    }
+    .dark-hero {
+        border-radius: 14px !important;
+        padding: 15px 14px !important;
+        margin-bottom: 12px !important;
+    }
+    .dark-hero-title {
+        font-size: 1.25rem !important;
+        line-height: 1.35 !important;
+    }
+    .dark-hero-desc {
+        font-size: 0.85rem !important;
+        line-height: 1.5 !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 5px !important;
+        padding-bottom: 6px !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px !important;
+        padding: 7px 11px !important;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+        margin-bottom: 6px !important;
+    }
+    .dark-card, .job-card-dark {
+        padding: 14px 12px !important;
+        border-radius: 13px !important;
+        margin-bottom: 12px !important;
+    }
+    [data-testid="stMetric"] {
+        border-radius: 11px !important;
+        padding: 10px 12px !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 12px !important;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 18px !important;
+    }
+    .stButton > button, .stDownloadButton > button {
+        width: 100% !important;
+        min-height: 50px !important;
+        font-size: 15px !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+    }
+    .chip {
+        padding: 3px 9px !important;
+        font-size: 12px !important;
+        margin: 2px 2px !important;
+    }
+    .pdf-iframe {
+        height: 420px !important;
+    }
+"""
+
+if current_device == "desktop":
+    device_specific_css = f"/* FORCED DESKTOP LAYOUT */\n{desktop_css_rules}"
+elif current_device == "tablet":
+    device_specific_css = f"/* FORCED TABLET / iPAD LAYOUT */\n{tablet_css_rules}"
+elif current_device == "mobile":
+    device_specific_css = f"/* FORCED MOBILE LAYOUT */\n{mobile_css_rules}"
+else:
+    # Auto Responsive Media Queries (Adapts automatically to user screen)
+    device_specific_css = f"""
+    @media (min-width: 1024px) {{
+        {desktop_css_rules}
+    }}
+    @media (min-width: 768px) and (max-width: 1023px) {{
+        {tablet_css_rules}
+    }}
+    @media (max-width: 767px) {{
+        {mobile_css_rules}
+    }}
+    """
+
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+    
+    /* Scoped Typography - Protect Material Symbols icons */
+    html, body, p, h1, h2, h3, h4, h5, h6, label, input, textarea, select, button, .stMarkdown, [data-testid="stMarkdownContainer"] {{
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }}
+
+    [data-testid="stIcon"],
+    [data-testid="stSidebarCollapseButton"] *,
+    [data-testid="stToolbar"] *,
+    [data-testid="stStatusWidget"] *,
+    [data-testid="stDecoration"] *,
+    .material-symbols-rounded,
+    .material-symbols-outlined,
+    .material-icons,
+    [class*="material-symbols"],
+    [class*="material-icons"] {{
+        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+        font-feature-settings: 'liga' 1;
+        text-rendering: optimizeLegibility;
+    }}
+
+    /* Dark App Container & RTL Direction */
+    .stApp {{
+        background-color: #0B0F19 !important;
+        color: #F8FAFC !important;
+    }}
+
+    [data-testid="stMainBlockContainer"],
+    .dark-card,
+    .job-card-dark,
+    .stMarkdown,
+    [data-testid="stExpander"],
+    .stAlert {{
+        direction: rtl;
+        text-align: right;
+    }}
+
+    [data-testid="stHeader"] {{
+        background: rgba(11, 15, 25, 0.85) !important;
+        backdrop-filter: blur(8px);
+    }}
+
+    /* Device Mode Pill Badge */
+    .device-badge-tag {{
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: rgba(56, 189, 248, 0.15);
+        color: #38BDF8;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        white-space: nowrap;
+    }}
+
+    /* Base Hero Header */
+    .dark-hero {{
+        background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        direction: rtl;
+        text-align: right;
+    }}
+    .dark-hero-title {{
+        font-weight: 800;
+        margin: 0 0 6px 0;
+        background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }}
+    .dark-hero-desc {{
+        color: #94A3B8;
+        margin: 0;
+        line-height: 1.6;
+    }}
+
+    /* Dark Cards & Surfaces */
+    .dark-card {{
+        background: #161F30;
+        border: 1px solid #283548;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }}
+
+    .job-card-dark {{
+        background: #161F30;
+        border: 1px solid #283548;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        transition: all 0.2s ease;
+    }}
+    .job-card-dark:hover {{
+        border-color: #38BDF8;
+        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+    }}
+
+    /* Glowing Dark Chips */
+    .chip {{
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        font-weight: 700;
+    }}
+    .chip-cyan {{
+        background: rgba(56, 189, 248, 0.12);
+        color: #38BDF8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }}
+    .chip-emerald {{
+        background: rgba(52, 211, 153, 0.12);
+        color: #34D399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }}
+    .chip-amber {{
+        background: rgba(251, 191, 36, 0.12);
+        color: #FBBF24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }}
+    .chip-purple {{
+        background: rgba(192, 132, 252, 0.12);
+        color: #C084FC;
+        border: 1px solid rgba(192, 132, 252, 0.3);
+    }}
+
+    /* Buttons */
+    .stButton > button {{
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+        transition: all 0.2s ease !important;
+        border: 1px solid #334155 !important;
+        background-color: #1E293B !important;
+        color: #F8FAFC !important;
+    }}
+    .stButton > button:hover {{
+        border-color: #38BDF8 !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+    }}
+    .stButton > button[kind="primary"], .stDownloadButton > button {{
+        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
+        color: #0F172A !important;
+        border: none !important;
+        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35) !important;
+    }}
+    .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {{
+        box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
+    }}
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {{
+        scrollbar-width: none;
+    }}
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{
+        display: none;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        font-weight: 700;
+        white-space: nowrap;
+        background-color: #161F30;
+        border: 1px solid #283548;
+        color: #94A3B8;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background: linear-gradient(135deg, #0284C7, #38BDF8) !important;
+        color: #0F172A !important;
+        font-weight: 800 !important;
+        border-color: #38BDF8 !important;
+        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3) !important;
+    }}
+
+    /* Metrics & Expanders */
+    [data-testid="stMetric"] {{
+        background: #161F30 !important;
+        border: 1px solid #283548 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    }}
+    [data-testid="stMetricLabel"] {{
+        font-weight: 700 !important;
+        color: #94A3B8 !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        font-weight: 900 !important;
+        color: #38BDF8 !important;
+    }}
+    .streamlit-expanderHeader {{
+        background-color: #161F30 !important;
+        border-radius: 12px !important;
+        border: 1px solid #283548 !important;
+        color: #F8FAFC !important;
+        font-weight: 700 !important;
+    }}
+    [data-testid="stExpander"] {{
+        background-color: #161F30 !important;
+        border: 1px solid #283548 !important;
+        border-radius: 14px !important;
+    }}
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {{
+        background-color: #161F30 !important;
+        border: 1px solid #334155 !important;
+        color: #F8FAFC !important;
+        border-radius: 10px !important;
+    }}
+    .stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus {{
+        border-color: #38BDF8 !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2) !important;
+    }}
+
+    /* Injected Device-Specific Rules */
+    {device_specific_css}
+</style>
+""", unsafe_allow_html=True)
+
+def render_pdf_preview(pdf_bytes: bytes, height: int = 540):
+    """Renders a responsive PDF preview with fallback for mobile devices."""
+    b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    pdf_html = f'''
+    <div style="margin: 12px 0; border: 1px solid #334155; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); background: #1E293B;">
+        <iframe class="pdf-iframe" src="data:application/pdf;base64,{b64_pdf}" width="100%" height="{height}px" type="application/pdf" style="border: none;">
+            <p style="padding: 20px; text-align: center; color: #94A3B8;">
+                📱 جهازك لا يدعم المعاينة المباشرة داخل المتصفح. اضغط على زر التحميل أدناه لحفظ الملف فوراً.
+            </p>
+        </iframe>
+    </div>
+    '''
+    st.markdown(pdf_html, unsafe_allow_html=True)
+
+@st.dialog("🔑 مطلوب إدخال مفتاح Google Gemini للبدء")
+def prompt_api_key_dialog():
+    st.markdown("""
+    **مرحباً بك!** 👋  
+    لقراءة سيرتك الذاتية وتحديد تخصصك ومؤهلاتك بدقة وفحص الـ ATS وتخصيص الـ CV، يلزم إدخال مفتاح **Google Gemini**.
+    
+    ✨ **المفتاح مجاني 100% وفوري وبدون أي اشتراك أو بطاقة بنكية!**  
+    احصل على مفتاحك المجاني خلال ثوانٍ من الرابط التالي:  
+    👉 [**اضغط هنا لفتح Google AI Studio ونسخ المفتاح مجاناً**](https://aistudio.google.com/app/apikey)
+    """)
+    
+    new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password")
+    
+    if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
+        clean_key = new_key.strip()
+        if clean_key:
+            st.session_state["gemini_api_key"] = clean_key
+            st.session_state["preferred_llm"] = "gemini"
+            st.session_state["auto_trigger_analysis"] = True
+            st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
+            st.rerun()
+        else:
+            st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
+
 # ----------------- MAIN HERO BANNER -----------------
-st.markdown("""
+active_mode = st.session_state.get("selected_device_mode", "auto")
+if active_mode == "desktop":
+    badge_label = "💻 واجهة الكمبيوتر المكتبي (Desktop)"
+elif active_mode == "tablet":
+    badge_label = "📟 واجهة التابلت والآيباد (Tablet / iPad)"
+elif active_mode == "mobile":
+    badge_label = "📱 واجهة الهاتف الجوال (Mobile)"
+else:
+    badge_label = "🌐 متكيف تلقائياً مع نوع شاشتك"
+
+st.markdown(f"""
 <div class="dark-hero">
-    <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
-    <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
+            <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
+        </div>
+        <div class="device-badge-tag">{badge_label}</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
