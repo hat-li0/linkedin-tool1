@@ -26,6 +26,7 @@ from job_searcher import (
 )
 from cv_tailor import evaluate_and_tailor_cv, generate_pdf_resume
 from auto_apply import LinkedInApplier
+from ai_engine import GEMINI_MODELS, GEMINI_MODEL_LABELS
 
 st.set_page_config(
     page_title="مساعد التوظيف الذكي و مخصص الـ CV",
@@ -43,6 +44,8 @@ if "openai_api_key" not in st.session_state:
     st.session_state["openai_api_key"] = ""
 if "preferred_llm" not in st.session_state:
     st.session_state["preferred_llm"] = "gemini"
+if "gemini_model" not in st.session_state:
+    st.session_state["gemini_model"] = "gemini-1.5-flash"
 if "search_results" not in st.session_state:
     st.session_state["search_results"] = []
 if "session_generated_pdfs" not in st.session_state:
@@ -59,10 +62,21 @@ with st.sidebar:
     llm_choice = st.selectbox(
         "مزود الذكاء الاصطناعي:",
         options=["gemini", "openai"],
-        format_func=lambda x: "Google Gemini (موصى به - مجاني)" if x == "gemini" else "OpenAI GPT-4o-mini",
+        format_func=lambda x: "Google Gemini (موصى به - مجاني 100%)" if x == "gemini" else "OpenAI GPT-4o-mini (مدفوع)",
         index=0 if st.session_state.get("preferred_llm") == "gemini" else 1
     )
     st.session_state["preferred_llm"] = llm_choice
+
+    if llm_choice == "gemini":
+        gemini_model_sidebar = st.selectbox(
+            "موديل الذكاء الاصطناعي (Google Gemini):",
+            options=GEMINI_MODELS,
+            format_func=lambda m: GEMINI_MODEL_LABELS.get(m, m),
+            index=GEMINI_MODELS.index(st.session_state.get("gemini_model", "gemini-1.5-flash")) if st.session_state.get("gemini_model", "gemini-1.5-flash") in GEMINI_MODELS else 0,
+            key="sidebar_gemini_model_choice",
+            help="جميع موديلات Google Gemini الموضحة مجانية للاستخدام مع مفتاح Google AI Studio."
+        )
+        st.session_state["gemini_model"] = gemini_model_sidebar
 
     gemini_key = st.text_input(
         "Google Gemini API Key:",
@@ -659,15 +673,24 @@ def prompt_api_key_dialog():
     👉 [**اضغط هنا لفتح Google AI Studio ونسخ المفتاح مجاناً**](https://aistudio.google.com/app/apikey)
     """)
     
+    dialog_model = st.selectbox(
+        "موديل Google Gemini المفضل:",
+        options=GEMINI_MODELS,
+        format_func=lambda m: GEMINI_MODEL_LABELS.get(m, m),
+        index=GEMINI_MODELS.index(st.session_state.get("gemini_model", "gemini-1.5-flash")) if st.session_state.get("gemini_model", "gemini-1.5-flash") in GEMINI_MODELS else 0,
+        key="dialog_gemini_model_choice"
+    )
+
     new_key = st.text_input("ألصق مفتاح Google Gemini API هنا:", type="password")
     
-    if st.button("💾 حفظ المفتاح ومتابعة التحليل", type="primary"):
+    if st.button("💾 حفظ المفتاح والموديل ومتابعة التحليل", type="primary"):
         clean_key = new_key.strip()
         if clean_key:
             st.session_state["gemini_api_key"] = clean_key
             st.session_state["preferred_llm"] = "gemini"
+            st.session_state["gemini_model"] = dialog_model
             st.session_state["auto_trigger_analysis"] = True
-            st.success("تم حفظ المفتاح بنجاح! جاري المتابعة...")
+            st.success("تم حفظ المفتاح والموديل بنجاح! جاري المتابعة...")
             st.rerun()
         else:
             st.error("يرجى إدخال المفتاح أولاً للمتابعة.")
@@ -703,6 +726,27 @@ tabs = st.tabs([
 with tabs[0]:
     st.subheader("📄 رفع السيرة الذاتية وفحص الـ ATS (Master CV)")
     st.caption("ارفع سيرتك الذاتية ليقوم الذكاء الاصطناعي باستخراج تخصصك بدقة وفحص جاهزيتها لأنظمة الـ ATS العالمية:")
+
+    active_llm = st.session_state.get("preferred_llm", "gemini")
+    if active_llm == "gemini":
+        col_m1, col_m2 = st.columns([2.5, 1.2])
+        with col_m1:
+            chosen_tab1_model = st.selectbox(
+                "🤖 موديل الذكاء الاصطناعي من Google (Gemini):",
+                options=GEMINI_MODELS,
+                format_func=lambda m: GEMINI_MODEL_LABELS.get(m, m),
+                index=GEMINI_MODELS.index(st.session_state.get("gemini_model", "gemini-1.5-flash")) if st.session_state.get("gemini_model", "gemini-1.5-flash") in GEMINI_MODELS else 0,
+                key="tab1_gemini_model_choice",
+                help="اختر موديل Google Gemini. جميع الموديلات الموضحة مجانية للاستخدام مع مفتاح Google AI Studio."
+            )
+            st.session_state["gemini_model"] = chosen_tab1_model
+        with col_m2:
+            st.markdown(
+                '<div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 10px; padding: 10px 12px; margin-top: 24px; text-align: center; color: #34D399; font-weight: 700; font-size: 0.86rem;">'
+                '✨ موديلات Gemini مجانية 100%'
+                '</div>',
+                unsafe_allow_html=True
+            )
     
     uploaded_file = st.file_uploader(
         "اختر ملف السيرة الذاتية (PDF أو Word أو TXT):",
@@ -721,13 +765,14 @@ with tabs[0]:
             if not active_key and not active_openai:
                 prompt_api_key_dialog()
             else:
-                with st.spinner(f"جاري قراءة الملف ({uploaded_file.name}) وتحليله بالذكاء الاصطناعي..."):
+                with st.spinner(f"جاري قراءة الملف ({uploaded_file.name}) وتحليله بموديل {st.session_state.get('gemini_model', 'gemini-1.5-flash')}..."):
                     try:
                         raw_text = extract_text_from_file(uploaded_file, uploaded_file.name)
                         parsed_profile = parse_cv_with_ai(
                             raw_text,
                             custom_key=active_key or active_openai,
-                            llm_type=st.session_state.get("preferred_llm", "gemini")
+                            llm_type=st.session_state.get("preferred_llm", "gemini"),
+                            model_name=st.session_state.get("gemini_model", "gemini-1.5-flash")
                         )
                         st.session_state["master_profile"] = parsed_profile
                         st.session_state["search_results"] = []
@@ -848,7 +893,8 @@ with tabs[0]:
                             fresh_audit = audit_master_cv_ats(
                                 master_profile.get("raw_text", ""),
                                 custom_key=active_key,
-                                llm_type=st.session_state.get("preferred_llm", "gemini")
+                                llm_type=st.session_state.get("preferred_llm", "gemini"),
+                                model_name=st.session_state.get("gemini_model", "gemini-1.5-flash")
                             )
                             master_profile["ats_audit"] = fresh_audit
                             st.session_state["master_profile"] = master_profile
@@ -1036,7 +1082,8 @@ with tabs[2]:
                                 master_profile=master_profile,
                                 job_data=job,
                                 custom_key=active_key or active_openai,
-                                llm_type=st.session_state.get("preferred_llm", "gemini")
+                                llm_type=st.session_state.get("preferred_llm", "gemini"),
+                                model_name=st.session_state.get("gemini_model", "gemini-1.5-flash")
                             )
                             # Generate tailored PDF
                             pdf_path = generate_pdf_resume(

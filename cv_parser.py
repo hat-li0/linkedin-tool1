@@ -91,7 +91,7 @@ def heuristic_extract_profile(raw_text: str) -> dict:
         }
     }
 
-def audit_master_cv_ats(raw_text: str, custom_key: str = None, llm_type: str = None) -> dict:
+def audit_master_cv_ats(raw_text: str, custom_key: str = None, llm_type: str = None, model_name: str = None) -> dict:
     """
     Performs a strict, uncompromising ATS audit assessing format, verbs, metrics,
     keyword density, completeness, weaknesses, and certification gaps.
@@ -136,9 +136,9 @@ def audit_master_cv_ats(raw_text: str, custom_key: str = None, llm_type: str = N
 {raw_text[:12000]}
 \"\"\"
 """
-    return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
+    return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type, model_name=model_name)
 
-def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None) -> dict:
+def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None, model_name: str = None) -> dict:
     """
     Parses raw CV text into structured profile data, generates target search keywords,
     and conducts a strict ATS quality audit all in one structured AI pass.
@@ -214,6 +214,6 @@ def parse_cv_with_ai(raw_text: str, custom_key: str = None, llm_type: str = None
 {raw_text[:12000]}
 \"\"\"
 """
-    data = ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
+    data = ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type, model_name=model_name)
     data["raw_text"] = raw_text
     return data

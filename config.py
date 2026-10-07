@@ -15,6 +15,7 @@ DEFAULT_SETTINGS = {
     "gemini_api_key": "",
     "openai_api_key": "",
     "preferred_llm": "gemini",  # "gemini" or "openai" or "local"
+    "gemini_model": "gemini-1.5-flash",
     "target_city": "الرياض",
     "target_country": "Saudi Arabia",
     "easy_apply_only": True,

@@ -66,7 +66,7 @@ def safe_render_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip(" -–\t")
     return text
 
-def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str = None, llm_type: str = None) -> dict:
+def evaluate_and_tailor_cv(master_profile: dict, job_data: dict, custom_key: str = None, llm_type: str = None, model_name: str = None) -> dict:
     """
     Compares the master CV against a job description, calculates match score,
     and produces tailored CV content + cover letter in professional ATS-compliant English.
@@ -134,7 +134,7 @@ Candidate Master Profile:
 """
 
     try:
-        return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type)
+        return ask_llm_json(prompt, system_prompt=system_prompt, custom_key=custom_key, llm_type=llm_type, model_name=model_name)
     except Exception as e:
         print(f"LLM tailoring notice: {e}, using dynamic candidate profile fallback...")
         skills = master_profile.get("skills", [])
