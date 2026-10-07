@@ -243,11 +243,10 @@ def _fetch_linkedin_jobs(keyword: str, location_query: str, easy_apply_only: boo
         return []
 
 def _fetch_tanqeeb_jobs(keyword: str, location_query: str) -> List[Dict]:
-    """Fetches real jobs from Tanqeeb (Saudi Arabia and Gulf aggregator)."""
+    """Fetches real jobs from Tanqeeb (Saudi Arabia aggregator)."""
     try:
         kw_enc = urllib.parse.quote(keyword)
-        city_param = "saudi" if any(c in location_query.lower() for c in ["saudi", "riyadh", "jeddah", "dammam", "khobar", "سعودية", "رياض", "جدة", "دمام"]) else "all"
-        url = f"https://saudi.tanqeeb.com/ar/jobs/search?keywords={kw_enc}&country={city_param}&search_in=jobs"
+        url = f"https://saudi.tanqeeb.com/ar/jobs/search?keywords={kw_enc}&search_in=jobs"
         res = _session.get(url, timeout=10)
         if res.status_code != 200:
             return []
@@ -262,16 +261,32 @@ def _fetch_tanqeeb_jobs(keyword: str, location_query: str) -> List[Dict]:
             link = a.get("href", "")
             if link.startswith("/"):
                 link = f"https://saudi.tanqeeb.com{link}"
-            parent = h2.find_parent("div", class_=lambda c: c and ("card" in c or "item" in c)) or h2.find_parent("div")
-            p = parent.find("p") if parent else None
-            desc = p.get_text(strip=True) if p else ""
+            parent = h2.find_parent("div", class_=lambda c: c and ("search-job-card" in c or "card" in c or "item" in c)) or h2.parent
 
-            # Extract location from tags if available
+            # Extract location
             loc = location_query
             if parent:
-                spans = [s.get_text(strip=True) for s in parent.find_all("span") if s.get_text(strip=True)]
-                if spans:
-                    loc = spans[0]
+                loc_elem = parent.find("span", class_="search-job-workplace-location")
+                if loc_elem:
+                    loc = loc_elem.get_text(strip=True).replace("في الموقع - ", "").strip()
+
+            # Extract company / source
+            company = "جهة عمل معلنة"
+            if parent:
+                comp_elem = parent.find("span", class_="search-job-source")
+                if comp_elem:
+                    company = comp_elem.get_text(strip=True)
+
+            # Extract date
+            posted_time = "مؤخراً"
+            if parent:
+                meta_elem = parent.find("div", class_="search-job-meta-line")
+                if meta_elem and "·" in meta_elem.get_text():
+                    posted_time = meta_elem.get_text(strip=True).split("·")[-1].strip()
+
+            # Extract snippet
+            p = parent.find("p") if parent else None
+            desc = p.get_text(strip=True) if p else ""
 
             job_id_num = re.sub(r"\D", "", link)
             job_id = f"tq_{job_id_num[-8:] if job_id_num else abs(hash(link)) % 10000000}"
@@ -280,9 +295,9 @@ def _fetch_tanqeeb_jobs(keyword: str, location_query: str) -> List[Dict]:
                 "id": job_id,
                 "raw_id": job_id,
                 "title": title,
-                "company": "جهة عمل معلنة",
+                "company": company,
                 "location": loc,
-                "posted_time": "مؤخراً",
+                "posted_time": posted_time,
                 "link": link,
                 "easy_apply": False,
                 "search_keyword": keyword,

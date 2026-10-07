@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import json
 import base64
+import html
 from pathlib import Path
 from config import OUTPUTS_DIR
 import sys
@@ -973,35 +974,49 @@ with tabs[2]:
             source_chip = f'<span class="chip chip-purple">🌐 {source_name}</span>'
             
             with st.container():
-                desc_snippet = job.get("description", "")
-                has_desc = bool(desc_snippet and len(desc_snippet.strip()) > 30)
-                clean_snippet = desc_snippet[:220].strip() if has_desc else ""
+                title_esc = html.escape(str(job.get('title', '')))
+                comp_esc = html.escape(str(job.get('company', '')))
+                loc_esc = html.escape(str(job.get('location', '')))
+                time_esc = html.escape(str(job.get('posted_time', '')))
 
-                st.markdown(f"""
-                <div class="job-card-dark">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
-                        <h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{job['title']}</h3>
-                        <div>{match_chip} {source_chip}</div>
-                    </div>
-                    <p style="margin: 0 0 12px 0; color: #94A3B8; font-weight: 600; font-size: 0.9rem;">
-                        🏢 {job['company']} &nbsp; • &nbsp; 📍 {job['location']} &nbsp; • &nbsp; 🕒 {job['posted_time']}
-                    </p>
-                    <div style="margin-bottom: 12px;">
-                        <span class="chip chip-cyan">👨‍🔧 {analysis['role_type']}</span>
-                        <span class="chip chip-emerald">🎓 {analysis['degree_match']}</span>
-                        <span class="chip chip-amber">⏳ {analysis['experience_level']}</span>
-                    </div>
-                    {f'<p style="color: #CBD5E1; font-size: 0.88rem; margin-bottom: 10px; line-height: 1.5;">{clean_snippet}...</p>' if has_desc else ''}
-                    <p style="margin: 4px 0;"><a href="{job['link']}" target="_blank" style="color: #38BDF8; text-decoration: none; font-weight: 700;">🔗 فتح إعلان الوظيفة على {source_name} ↗</a></p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                col_btn1, col_btn2 = st.columns([1, 2])
+                desc_snippet = job.get("description", "")
+                desc_html = ""
+                if desc_snippet and len(desc_snippet.strip()) > 30:
+                    clean_snippet = html.escape(desc_snippet[:220].strip())
+                    desc_html = f'<p style="color: #CBD5E1; font-size: 0.88rem; margin: 10px 0 0 0; line-height: 1.5;">{clean_snippet}...</p>'
+
+                card_html = (
+                    '<div class="job-card-dark">'
+                    '<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">'
+                    f'<h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{title_esc}</h3>'
+                    f'<div>{match_chip} {source_chip}</div>'
+                    '</div>'
+                    f'<p style="margin: 0 0 10px 0; color: #94A3B8; font-weight: 600; font-size: 0.9rem;">'
+                    f'🏢 {comp_esc} &nbsp; • &nbsp; 📍 {loc_esc} &nbsp; • &nbsp; 🕒 {time_esc}'
+                    '</p>'
+                    '<div>'
+                    f'<span class="chip chip-cyan">👨‍🔧 {analysis["role_type"]}</span>'
+                    f'<span class="chip chip-emerald">🎓 {analysis["degree_match"]}</span>'
+                    f'<span class="chip chip-amber">⏳ {analysis["experience_level"]}</span>'
+                    '</div>'
+                    f'{desc_html}'
+                    '</div>'
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
+
+                col_btn1, col_btn2 = st.columns([1, 1])
                 with col_btn1:
                     tailor_btn = st.button(
-                        f"🎯 تخصيص الـ CV لهذه الوظيفة",
+                        "🎯 تخصيص الـ CV لهذه الوظيفة",
                         key=f"tailor_btn_{idx}",
-                        type="primary"
+                        type="primary",
+                        use_container_width=True
+                    )
+                with col_btn2:
+                    st.link_button(
+                        f"🔗 فتح إعلان الوظيفة ({source_name}) ↗",
+                        job['link'],
+                        use_container_width=True
                     )
                 
                 tailored_key = f"tailored_{job['id']}"
