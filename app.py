@@ -4,8 +4,24 @@ import json
 import base64
 from pathlib import Path
 from config import OUTPUTS_DIR
-from cv_parser import extract_text_from_file, parse_cv_with_ai, audit_master_cv_ats
-from job_searcher import search_multi_source_jobs, search_linkedin_jobs, fetch_job_description, analyze_job_qualification, CITY_MAP
+import sys
+import importlib
+
+try:
+    import job_searcher
+    if not hasattr(job_searcher, 'search_multi_source_jobs'):
+        importlib.reload(job_searcher)
+except Exception:
+    if 'job_searcher' in sys.modules:
+        del sys.modules['job_searcher']
+
+from job_searcher import (
+    search_multi_source_jobs,
+    search_linkedin_jobs,
+    fetch_job_description,
+    analyze_job_qualification,
+    CITY_MAP
+)
 from cv_tailor import evaluate_and_tailor_cv, generate_pdf_resume
 from auto_apply import LinkedInApplier
 

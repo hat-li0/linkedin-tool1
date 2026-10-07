@@ -2,8 +2,19 @@ import time
 import urllib.parse
 import re
 import requests
+import concurrent.futures
 from bs4 import BeautifulSoup
 from typing import List, Dict, Tuple
+
+__all__ = [
+    "search_multi_source_jobs",
+    "search_linkedin_jobs",
+    "fetch_job_description",
+    "analyze_job_qualification",
+    "CITY_MAP",
+    "calculate_cv_match",
+    "normalize_city"
+]
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -123,8 +134,6 @@ def is_title_relevant(title: str, query_keywords: List[str] = None) -> bool:
     if not words:
         return True
     return any(w in t for w in words)
-
-import concurrent.futures
 
 _session = requests.Session()
 _session.headers.update(HEADERS)

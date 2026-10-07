@@ -10,6 +10,10 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 try:
+    from reportlab.pdfbase.ttfonts import TTFont
+except Exception:
+    TTFont = None
+try:
     import arabic_reshaper
 except ImportError:
     arabic_reshaper = None
