@@ -1,11 +1,13 @@
 import os
 import json
 import re
+import time
 from config import load_settings
 
 GEMINI_MODELS = [
     "gemini-1.5-flash",
     "gemini-2.0-flash",
+    "gemini-1.5-flash-8b",
     "gemini-2.0-flash-lite",
     "gemini-1.5-pro",
     "gemini-flash-latest"
@@ -14,6 +16,7 @@ GEMINI_MODELS = [
 GEMINI_MODEL_LABELS = {
     "gemini-1.5-flash": "gemini-1.5-flash (مجاني - فائق السرعة وموصى به ⚡)",
     "gemini-2.0-flash": "gemini-2.0-flash (مجاني - الجيل الأحدث والأذكى 🚀)",
+    "gemini-1.5-flash-8b": "gemini-1.5-flash-8b (مجاني - خفيف وسريع واقتصادي 💡)",
     "gemini-2.0-flash-lite": "gemini-2.0-flash-lite (مجاني - فائق السرعة وخفيف ⚡)",
     "gemini-1.5-pro": "gemini-1.5-pro (مجاني بحصة محددة - الأعمق والأقوى تحليلاً 🧠)",
     "gemini-flash-latest": "gemini-flash-latest (مجاني - التحديث التلقائي المستمر 🔄)"
@@ -72,30 +75,45 @@ def ask_gemini(prompt: str, system_prompt: str, gemini_key: str, is_json: bool =
 
     last_error = None
     for target_model in models_to_try:
-        try:
-            model = genai.GenerativeModel(
-                model_name=target_model,
-                system_instruction=system_prompt if system_prompt else None,
-                generation_config=gen_config
-            )
-            response = model.generate_content(prompt)
-            if response and response.text:
-                return response.text.strip()
-        except Exception as e:
-            err_msg = str(e)
-            last_error = e
-            # If model is 404 / unsupported, try the next model
-            if "404" in err_msg or "NotFound" in err_msg or "not found" in err_msg.lower() or "unsupported" in err_msg.lower():
-                continue
-            # If invalid API key, fail fast with a friendly message
-            if "API_KEY_INVALID" in err_msg or "API key not valid" in err_msg or "400" in err_msg:
-                raise ValueError("مفتاح Google Gemini API غير صالح. يرجى التأكد من نسخه بدقة من Google AI Studio.")
-            # If quota exceeded
-            if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
-                raise ValueError(f"تم تجاوز حد الاستخدام المسموح للموديل ({target_model}). يمكنك التبديل إلى نموذج آخر مثل gemini-1.5-flash أو استخدام مفتاح آخر.")
-            raise e
+        # Attempt up to 3 times per model to handle transient RPM (Requests Per Minute) rate limits
+        for attempt in range(3):
+            try:
+                model = genai.GenerativeModel(
+                    model_name=target_model,
+                    system_instruction=system_prompt if system_prompt else None,
+                    generation_config=gen_config
+                )
+                response = model.generate_content(prompt)
+                if response and response.text:
+                    return response.text.strip()
+            except Exception as e:
+                err_msg = str(e)
+                last_error = e
 
-    raise ValueError(f"تعذر الاتصال بنماذج Google Gemini المتاحة. آخر خطأ: {last_error}")
+                # 1. Invalid API key: fail immediately with clear instructions
+                if "API_KEY_INVALID" in err_msg or "API key not valid" in err_msg or "400" in err_msg:
+                    raise ValueError("مفتاح Google Gemini API غير صالح. يرجى التأكد من نسخه بدقة من Google AI Studio.")
+
+                # 2. Unsupported / 404 model: skip immediately to next model
+                if "404" in err_msg or "NotFound" in err_msg or "not found" in err_msg.lower() or "unsupported" in err_msg.lower():
+                    break
+
+                # 3. Rate limit / Quota exceeded (429 / RESOURCE_EXHAUSTED)
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower() or "rate" in err_msg.lower():
+                    if attempt < 2:
+                        # Temporary RPM limit spike: wait briefly (2s, then 4s) and retry
+                        time.sleep(2 * (attempt + 1))
+                        continue
+                    else:
+                        # Model hit daily cap or persistent limit: fallback to the next model in the chain!
+                        break
+
+                raise e
+
+    raise ValueError(
+        "تم تجاوز حد الاستخدام المؤقت (429 Rate Limit) على مفتاح Google Gemini الحالي لجميع النماذج. "
+        "يرجى الانتظار لمدة دقيقة واحدة لإعادة تعبئة الحصة، أو استخدام مفتاح API مجاني جديد من Google AI Studio."
+    )
 
 def ask_openai(prompt: str, system_prompt: str, openai_key: str, is_json: bool = False) -> str:
     from openai import OpenAI
