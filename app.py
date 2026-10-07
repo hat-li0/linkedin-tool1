@@ -5,7 +5,7 @@ import base64
 from pathlib import Path
 from config import OUTPUTS_DIR
 from cv_parser import extract_text_from_file, parse_cv_with_ai, audit_master_cv_ats
-from job_searcher import search_linkedin_jobs, fetch_job_description, analyze_job_qualification, CITY_MAP
+from job_searcher import search_multi_source_jobs, search_linkedin_jobs, fetch_job_description, analyze_job_qualification, CITY_MAP
 from cv_tailor import evaluate_and_tailor_cv, generate_pdf_resume
 from auto_apply import LinkedInApplier
 
@@ -879,6 +879,25 @@ with tabs[1]:
                 height=90
             )
 
+        st.markdown("##### 🌐 منصات ومحركات البحث المستهدفة:")
+        col_src1, col_src2, col_src3 = st.columns(3)
+        with col_src1:
+            use_linkedin = st.checkbox("🔵 LinkedIn (لينكدين)", value=True)
+        with col_src2:
+            use_tanqeeb = st.checkbox("🟢 منصة تنقيب (السعودية والخليج)", value=True)
+        with col_src3:
+            use_remote = st.checkbox("🌍 منصات العمل عن بعد (Remote)", value=True)
+
+        selected_sources = []
+        if use_linkedin:
+            selected_sources.append("linkedin")
+        if use_tanqeeb:
+            selected_sources.append("tanqeeb")
+        if use_remote:
+            selected_sources.append("remote")
+        if not selected_sources:
+            selected_sources = ["linkedin", "tanqeeb"]
+
         col_opt1, col_opt2, col_opt3 = st.columns(3)
         with col_opt1:
             technician_only = st.checkbox("🎯 وظائف الفنيين والتقنيين فقط", value=False)
@@ -887,25 +906,27 @@ with tabs[1]:
         with col_opt3:
             easy_apply_only = st.checkbox("⚡ التقديم السهل فقط (Easy Apply)", value=False)
 
-        max_jobs = st.slider("عدد الوظائف المطلوبة للبحث:", min_value=5, max_value=30, value=15)
+        st.caption("⚡ **البحث الشامل وغير المحدود:** يبحث النظام في عدة منصات دفعة واحدة ويجلب كافة الوظائف المتاحة بدون تحديد حد أقصى، ويرتبها تلقائياً لتظهر **الوظائف الأكثر تطابقاً مع سيرتك الذاتية في البداية أولاً**.")
 
-        if st.button("🔎 ابدأ البحث عن الوظائف في هذه المدينة", type="primary"):
+        if st.button("🔎 ابدأ البحث الشامل في جميع المنصات", type="primary"):
             keywords_list = [k.strip() for k in job_keywords_input.split(",") if k.strip()]
-            with st.spinner(f"جاري البحث في لينكدين عن الوظائف في '{target_city_final}'..."):
-                jobs = search_linkedin_jobs(
+            with st.spinner(f"جاري البحث في جميع المنصات عن الوظائف في '{target_city_final}' وترتيبها حسب التوافق مع سيرتك..."):
+                jobs = search_multi_source_jobs(
                     keywords_list=keywords_list,
                     target_city=target_city_final,
+                    master_profile=master_profile,
+                    sources=selected_sources,
                     easy_apply_only=easy_apply_only,
                     technician_only=technician_only,
                     exclude_managers=exclude_managers,
-                    max_results=max_jobs
+                    max_results=None
                 )
                 if jobs:
                     st.session_state["search_results"] = jobs
                     st.session_state["searched_city"] = target_city_final
-                    st.success(f"تم العثور على {len(jobs)} وظيفة مطابقة في {target_city_final}! انتقل إلى الخطوة 3 لعرضها وتخصيص الـ CV.")
+                    st.success(f"تم العثور على {len(jobs)} وظيفة ورُتّبت حسب الأكثر تطابقاً مع سيرتك الذاتية! انتقل إلى التبويب التالي لعرضها.")
                 else:
-                    st.warning("لم يتم العثور على نتائج مباشرة بهذه الكلمات المفتاحية في هذه المدينة. جرب توسيع المسميات.")
+                    st.warning("لم يتم العثور على نتائج مباشرة بهذه الكلمات في هذه المدينة. جرب توسيع المسميات أو تفعيل جميع المنصات.")
 
 # ----------------- TAB 3: JOBS & AI TAILORING -----------------
 with tabs[2]:
@@ -916,15 +937,36 @@ with tabs[2]:
     if not search_results:
         st.info("🔍 لم يتم تنفيذ بحث بعد. اختر المدينة واضغط 'ابدأ البحث' من الخطوة 2.")
     else:
-        st.write(f"عرض **{len(search_results)}** وظيفة تم العثور عليها في **{st.session_state.get('searched_city', '')}**:")
+        st.write(f"عرض **{len(search_results)}** وظيفة تم العثور عليها مرتبة من **الأعلى تطابقاً مع سيرتك الذاتية** إلى الأقل:")
         
         for idx, job in enumerate(search_results):
             analysis = analyze_job_qualification(job['title'], job.get('description', ''))
             
+            # Match badge
+            match_score = job.get("match_score", 70)
+            if match_score >= 85:
+                match_chip = f'<span class="chip chip-emerald">🔥 تطابق ممتاز {match_score}% مع الـ CV</span>'
+            elif match_score >= 70:
+                match_chip = f'<span class="chip chip-cyan">⭐ تطابق جيد {match_score}% مع الـ CV</span>'
+            elif match_score >= 50:
+                match_chip = f'<span class="chip chip-amber">🔹 تطابق متوسط {match_score}%</span>'
+            else:
+                match_chip = f'<span class="chip chip-purple">تطابق عام {match_score}%</span>'
+
+            source_name = job.get("source", "LinkedIn")
+            source_chip = f'<span class="chip chip-purple">🌐 {source_name}</span>'
+            
             with st.container():
+                desc_snippet = job.get("description", "")
+                has_desc = bool(desc_snippet and len(desc_snippet.strip()) > 30)
+                clean_snippet = desc_snippet[:220].strip() if has_desc else ""
+
                 st.markdown(f"""
                 <div class="job-card-dark">
-                    <h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{job['title']}</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                        <h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{job['title']}</h3>
+                        <div>{match_chip} {source_chip}</div>
+                    </div>
                     <p style="margin: 0 0 12px 0; color: #94A3B8; font-weight: 600; font-size: 0.9rem;">
                         🏢 {job['company']} &nbsp; • &nbsp; 📍 {job['location']} &nbsp; • &nbsp; 🕒 {job['posted_time']}
                     </p>
@@ -933,7 +975,8 @@ with tabs[2]:
                         <span class="chip chip-emerald">🎓 {analysis['degree_match']}</span>
                         <span class="chip chip-amber">⏳ {analysis['experience_level']}</span>
                     </div>
-                    <p style="margin: 4px 0;"><a href="{job['link']}" target="_blank" style="color: #38BDF8; text-decoration: none; font-weight: 700;">🔗 فتح رابط الوظيفة في LinkedIn ↗</a></p>
+                    {f'<p style="color: #CBD5E1; font-size: 0.88rem; margin-bottom: 10px; line-height: 1.5;">{clean_snippet}...</p>' if has_desc else ''}
+                    <p style="margin: 4px 0;"><a href="{job['link']}" target="_blank" style="color: #38BDF8; text-decoration: none; font-weight: 700;">🔗 فتح إعلان الوظيفة على {source_name} ↗</a></p>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -954,8 +997,8 @@ with tabs[2]:
                         prompt_api_key_dialog()
                     else:
                         with st.spinner("جاري جلب تفاصيل الوظيفة الكاملة وتحليل التوافق وتخصيص الـ CV..."):
-                            if not job.get("description"):
-                                job["description"] = fetch_job_description(job['id'])
+                            if not job.get("description") or len(job.get("description", "")) < 80:
+                                job["description"] = fetch_job_description(job['id'], job)
                             
                             tailored_res = evaluate_and_tailor_cv(
                                 master_profile=master_profile,

@@ -129,10 +129,61 @@ import concurrent.futures
 _session = requests.Session()
 _session.headers.update(HEADERS)
 
-def _fetch_keyword_jobs(keyword: str, location_query: str, easy_apply_only: bool) -> List[Dict]:
+def calculate_cv_match(job: Dict, master_profile: Dict = None) -> int:
+    """
+    Calculates a relevance score (20-99%) comparing the job against the candidate's CV profile.
+    Considers target major, suggested titles, extracted skills, and experience level.
+    """
+    if not master_profile:
+        return 65
+
+    title = job.get("title", "").lower()
+    desc = (job.get("description", "") or "").lower()
+    
+    cand_major = (master_profile.get("target_major", "") or "").lower()
+    cand_titles = [t.lower() for t in master_profile.get("suggested_job_titles", [])]
+    cand_skills = [s.lower() for s in master_profile.get("skills", [])]
+    cand_exp = master_profile.get("experience_level", "")
+    
+    score = 45  # baseline score
+    
+    # 1. Target major matching (+25 if in title, +12 if in description)
+    major_tokens = [m for m in re.split(r"[\s,/-]+", cand_major) if len(m) > 2]
+    if major_tokens and any(t in title for t in major_tokens):
+        score += 25
+    elif major_tokens and any(t in desc for t in major_tokens):
+        score += 12
+
+    # 2. Suggested job titles matching (+20 for full, +10 for partial)
+    for ct in cand_titles:
+        ct_tokens = [w for w in re.split(r"[\s,/-]+", ct) if len(w) > 2]
+        if ct_tokens and all(w in title for w in ct_tokens):
+            score += 20
+            break
+        elif ct_tokens and any(w in title for w in ct_tokens):
+            score += 10
+            break
+
+    # 3. Matching skills in title or description (+4 per skill, max +20)
+    skills_matched = 0
+    for sk in cand_skills:
+        if len(sk) > 2 and (sk in title or sk in desc):
+            skills_matched += 1
+            if skills_matched >= 5:
+                break
+    score += skills_matched * 4
+
+    # 4. Penalty for mismatched seniority
+    if any(m in title for m in ['director', 'vice president', 'vp', 'head of', 'general manager', 'chief']):
+        if any(w in str(cand_exp) for w in ['حديث', 'مبتدئ', 'متوسط', 'junior', 'entry', 'fresh']):
+            score -= 30
+
+    return max(25, min(99, score))
+
+def _fetch_linkedin_jobs(keyword: str, location_query: str, easy_apply_only: bool, start: int = 0) -> List[Dict]:
     kw_encoded = urllib.parse.quote(f'"{keyword}"' if " " in keyword else keyword)
     loc_encoded = urllib.parse.quote(location_query)
-    url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={kw_encoded}&location={loc_encoded}&start=0"
+    url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={kw_encoded}&location={loc_encoded}&start={start}"
     if easy_apply_only:
         url += "&f_AL=true"
     try:
@@ -165,7 +216,8 @@ def _fetch_keyword_jobs(keyword: str, location_query: str, easy_apply_only: bool
             has_easy_apply = bool(card.find("span", class_="job-result-card__easy-apply") or "Easy Apply" in card.get_text())
 
             parsed.append({
-                "id": job_id,
+                "id": f"li_{job_id}",
+                "raw_id": job_id,
                 "title": title,
                 "company": company,
                 "location": location,
@@ -173,29 +225,113 @@ def _fetch_keyword_jobs(keyword: str, location_query: str, easy_apply_only: bool
                 "link": link,
                 "easy_apply": has_easy_apply or easy_apply_only,
                 "search_keyword": keyword,
+                "source": "LinkedIn",
                 "description": ""
             })
         return parsed
     except Exception as e:
-        print(f"Notice during parallel LinkedIn search for '{keyword}': {e}")
+        print(f"Notice during LinkedIn search for '{keyword}': {e}")
         return []
 
-def search_linkedin_jobs(
+def _fetch_tanqeeb_jobs(keyword: str, location_query: str) -> List[Dict]:
+    """Fetches real jobs from Tanqeeb (Saudi Arabia and Gulf aggregator)."""
+    try:
+        kw_enc = urllib.parse.quote(keyword)
+        city_param = "saudi" if any(c in location_query.lower() for c in ["saudi", "riyadh", "jeddah", "dammam", "khobar", "سعودية", "رياض", "جدة", "دمام"]) else "all"
+        url = f"https://saudi.tanqeeb.com/ar/jobs/search?keywords={kw_enc}&country={city_param}&search_in=jobs"
+        res = _session.get(url, timeout=10)
+        if res.status_code != 200:
+            return []
+        soup = BeautifulSoup(res.text, "html.parser")
+        h2s = [h for h in soup.find_all("h2") if h.find("a")]
+        parsed = []
+        for h2 in h2s:
+            a = h2.find("a")
+            if not a:
+                continue
+            title = a.get_text(strip=True)
+            link = a.get("href", "")
+            if link.startswith("/"):
+                link = f"https://saudi.tanqeeb.com{link}"
+            parent = h2.find_parent("div", class_=lambda c: c and ("card" in c or "item" in c)) or h2.find_parent("div")
+            p = parent.find("p") if parent else None
+            desc = p.get_text(strip=True) if p else ""
+
+            # Extract location from tags if available
+            loc = location_query
+            if parent:
+                spans = [s.get_text(strip=True) for s in parent.find_all("span") if s.get_text(strip=True)]
+                if spans:
+                    loc = spans[0]
+
+            job_id_num = re.sub(r"\D", "", link)
+            job_id = f"tq_{job_id_num[-8:] if job_id_num else abs(hash(link)) % 10000000}"
+
+            parsed.append({
+                "id": job_id,
+                "raw_id": job_id,
+                "title": title,
+                "company": "جهة عمل معلنة",
+                "location": loc,
+                "posted_time": "مؤخراً",
+                "link": link,
+                "easy_apply": False,
+                "search_keyword": keyword,
+                "source": "تنقيب (Tanqeeb)",
+                "description": desc
+            })
+        return parsed
+    except Exception as e:
+        print(f"Notice during Tanqeeb search for '{keyword}': {e}")
+        return []
+
+def _fetch_remotive_jobs(keyword: str) -> List[Dict]:
+    """Fetches relevant remote jobs from Remotive API."""
+    try:
+        url = f"https://remotive.com/api/remote-jobs?search={urllib.parse.quote(keyword)}&limit=15"
+        res = _session.get(url, timeout=8)
+        if res.status_code != 200:
+            return []
+        data = res.json()
+        parsed = []
+        for j in data.get("jobs", []):
+            parsed.append({
+                "id": f"rem_{j.get('id', abs(hash(j.get('url', ''))) % 10000000)}",
+                "raw_id": str(j.get("id", "")),
+                "title": j.get("title", ""),
+                "company": j.get("company_name", "Global Company"),
+                "location": j.get("candidate_required_location", "عن بعد (Remote)"),
+                "posted_time": j.get("publication_date", "مؤخراً")[:10],
+                "link": j.get("url", ""),
+                "easy_apply": False,
+                "search_keyword": keyword,
+                "source": "عن بعد (Remotive)",
+                "description": j.get("description", "")[:500]
+            })
+        return parsed
+    except Exception as e:
+        print(f"Notice during Remotive search for '{keyword}': {e}")
+        return []
+
+def search_multi_source_jobs(
     keywords_list: List[str],
     target_city: str,
+    master_profile: Dict = None,
+    sources: List[str] = None,
     easy_apply_only: bool = False,
-    technician_only: bool = True,
+    technician_only: bool = False,
     exclude_managers: bool = True,
-    max_results: int = 15
+    max_results: int = None
 ) -> List[Dict]:
     """
-    Searches LinkedIn for jobs using parallel concurrency with strict title and degree filtering.
+    Searches across multiple platforms (LinkedIn, Tanqeeb, Remotive) without artificial limits.
+    Calculates CV match scores for all posts, and returns results sorted by highest CV match first.
     """
     location_query = normalize_city(target_city)
+    sources = sources or ["linkedin", "tanqeeb", "remote"]
     jobs = []
-    seen_ids = set()
+    seen_keys = set()
 
-    # Expand keywords into clean single queries
     clean_keywords = []
     for raw_kw in keywords_list:
         parts = re.split(r"[/,]", raw_kw)
@@ -207,47 +343,86 @@ def search_linkedin_jobs(
     if not clean_keywords:
         return []
 
-    # Parallel asynchronous fetching across keywords
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(clean_keywords))) as executor:
-        future_to_kw = {
-            executor.submit(_fetch_keyword_jobs, kw, location_query, easy_apply_only): kw
-            for kw in clean_keywords[:6]
-        }
-        for future in concurrent.futures.as_completed(future_to_kw):
-            kw_jobs = future.result()
-            for job in kw_jobs:
-                if len(jobs) >= max_results:
-                    break
-                job_id = job["id"]
-                if job_id in seen_ids:
-                    continue
+    # Parallel asynchronous multi-source fetching
+    tasks = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        for kw in clean_keywords[:6]:
+            if "linkedin" in sources:
+                tasks.append(executor.submit(_fetch_linkedin_jobs, kw, location_query, easy_apply_only, 0))
+                # Also fetch page 2 for deeper results
+                tasks.append(executor.submit(_fetch_linkedin_jobs, kw, location_query, easy_apply_only, 25))
+            if "tanqeeb" in sources:
+                tasks.append(executor.submit(_fetch_tanqeeb_jobs, kw, location_query))
+            if "remote" in sources:
+                tasks.append(executor.submit(_fetch_remotive_jobs, kw))
 
-                title = job["title"]
-                if not is_title_relevant(title):
-                    continue
-
-                t_lower = title.lower()
-                if exclude_managers and any(m in t_lower for m in ['director', 'vice president', 'head of', 'manager', 'lead engineer']):
-                    continue
-
-                if technician_only:
-                    is_tech = any(tk in t_lower for tk in [
-                        'technician', 'instrument', 'analyzer', 'calibration', 'i&c', 'control',
-                        'operator', 'trainee', 'mechanic', 'فني', 'أجهزة', 'آلات'
-                    ])
-                    if not is_tech:
+        for future in concurrent.futures.as_completed(tasks):
+            try:
+                batch = future.result()
+                for job in batch:
+                    title = job.get("title", "").strip()
+                    if not title or not is_title_relevant(title, clean_keywords):
                         continue
 
-                seen_ids.add(job_id)
-                jobs.append(job)
+                    t_lower = title.lower()
+                    if exclude_managers and any(m in t_lower for m in ['director', 'vice president', 'head of', 'manager', 'lead engineer']):
+                        continue
+
+                    if technician_only:
+                        is_tech = any(tk in t_lower for tk in [
+                            'technician', 'instrument', 'analyzer', 'calibration', 'i&c', 'control',
+                            'operator', 'trainee', 'mechanic', 'فني', 'أجهزة', 'آلات'
+                        ])
+                        if not is_tech:
+                            continue
+
+                    dedup_key = f"{title.lower()}_{job.get('company', '').lower()}"
+                    if dedup_key in seen_keys:
+                        continue
+                    seen_keys.add(dedup_key)
+
+                    # Calculate CV match score for this job
+                    job["match_score"] = calculate_cv_match(job, master_profile)
+                    jobs.append(job)
+            except Exception as e:
+                print(f"Error collecting search results: {e}")
+
+    # SORT BY HIGHEST CV MATCH RELEVANCE FIRST
+    jobs.sort(key=lambda j: j.get("match_score", 0), reverse=True)
+
+    if max_results and len(jobs) > max_results:
+        return jobs[:max_results]
 
     return jobs
 
-def fetch_job_description(job_id: str) -> str:
-    """Fetches the full description text for a specific LinkedIn job ID."""
-    url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}"
+def search_linkedin_jobs(
+    keywords_list: List[str],
+    target_city: str,
+    easy_apply_only: bool = False,
+    technician_only: bool = True,
+    exclude_managers: bool = True,
+    max_results: int = None
+) -> List[Dict]:
+    """Compatibility wrapper calling the multi-source search engine."""
+    return search_multi_source_jobs(
+        keywords_list=keywords_list,
+        target_city=target_city,
+        sources=["linkedin", "tanqeeb", "remote"],
+        easy_apply_only=easy_apply_only,
+        technician_only=technician_only,
+        exclude_managers=exclude_managers,
+        max_results=max_results
+    )
+
+def fetch_job_description(job_id: str, job_dict: Dict = None) -> str:
+    """Fetches the full description text for a job."""
+    if job_dict and job_dict.get("description") and len(job_dict["description"]) > 100:
+        return job_dict["description"]
+
+    clean_id = str(job_id).replace("li_", "").replace("tq_", "").replace("rem_", "")
+    url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{clean_id}"
     try:
-        res = requests.get(url, headers=HEADERS, timeout=12)
+        res = requests.get(url, headers=HEADERS, timeout=10)
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, "html.parser")
             desc_elem = soup.find("div", class_="show-more-less-html__markup")
@@ -257,5 +432,9 @@ def fetch_job_description(job_id: str) -> str:
             if article:
                 return article.get_text(separator="\n", strip=True)
     except Exception as e:
-        print(f"Error fetching job description for {job_id}: {e}")
-    return "لا يتوفر وصف تفصيلي لهذه الوظيفة حالياً."
+        print(f"Error fetching job description for {clean_id}: {e}")
+
+    if job_dict and job_dict.get("description"):
+        return job_dict["description"]
+
+    return "الوظيفة معلنة عبر منصات التوظيف المعتمدة. يمكنك الضغط على رابط الوظيفة للاطلاع على تفاصيل التقديم والشروط بالكامل."
