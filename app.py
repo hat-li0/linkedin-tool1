@@ -5,6 +5,7 @@ import base64
 import html
 from pathlib import Path
 from config import OUTPUTS_DIR
+from cv_parser import extract_text_from_file, parse_cv_with_ai, audit_master_cv_ats
 import sys
 import importlib
 
