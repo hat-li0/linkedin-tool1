@@ -3,6 +3,8 @@ import json
 import re
 import time
 from config import load_settings
+from security_guard import record_ai_usage, get_daily_quota_status, clean_error_message
+from security_logger import log_security_event
 
 GEMINI_MODELS = [
     "gemini-1.5-flash",
@@ -21,6 +23,7 @@ GEMINI_MODEL_LABELS = {
     "gemini-1.5-pro": "gemini-1.5-pro (مجاني بحصة محددة - الأعمق والأقوى تحليلاً 🧠)",
     "gemini-flash-latest": "gemini-flash-latest (مجاني - التحديث التلقائي المستمر 🔄)"
 }
+
 
 def get_active_keys(custom_key: str = None, llm_type: str = None, model_name: str = None):
     settings = load_settings()
@@ -42,6 +45,7 @@ def get_active_keys(custom_key: str = None, llm_type: str = None, model_name: st
         
     return llm_type, gemini_key, openai_key, chosen_model
 
+
 def get_llm_client(custom_key: str = None, llm_type: str = None):
     """Backward compatibility helper for retrieving configured LLM client."""
     chosen_type, gemini_key, openai_key, _ = get_active_keys(custom_key=custom_key, llm_type=llm_type)
@@ -57,7 +61,17 @@ def get_llm_client(custom_key: str = None, llm_type: str = None):
         return "openai", OpenAI(api_key=openai_key)
     return "none", None
 
+
 def ask_gemini(prompt: str, system_prompt: str, gemini_key: str, is_json: bool = False, model_name: str = None) -> str:
+    # Quota check (Point 16)
+    quota = get_daily_quota_status()
+    if quota.get("is_exceeded"):
+        log_security_event("SPENDING_CAP_EXCEEDED", {"daily_cap": quota["daily_cap"]}, severity="WARNING")
+        raise ValueError(
+            f"تم الوصول إلى سقف الاستخدام اليومي المحدد ({quota['daily_cap']} طلب/يوم) لحماية حصتك وميزانيتك. "
+            "يتجدد العداد تلقائياً غداً، أو يمكنك استخدام مفتاح API إضافي من Google AI Studio."
+        )
+
     import google.generativeai as genai
     genai.configure(api_key=gemini_key)
     
@@ -85,13 +99,16 @@ def ask_gemini(prompt: str, system_prompt: str, gemini_key: str, is_json: bool =
                 )
                 response = model.generate_content(prompt)
                 if response and response.text:
+                    # Record usage against quota ledger (Point 16)
+                    record_ai_usage(tokens=len(prompt) // 4 + len(response.text) // 4)
                     return response.text.strip()
             except Exception as e:
                 err_msg = str(e)
                 last_error = e
 
-                # 1. Invalid API key: fail immediately with clear instructions
+                # 1. Invalid API key: fail immediately with clear instructions (never expose key)
                 if "API_KEY_INVALID" in err_msg or "API key not valid" in err_msg or "400" in err_msg:
+                    log_security_event("INVALID_API_KEY_ATTEMPT", severity="WARNING")
                     raise ValueError("مفتاح Google Gemini API غير صالح. يرجى التأكد من نسخه بدقة من Google AI Studio.")
 
                 # 2. Unsupported / 404 model: skip immediately to next model
@@ -108,16 +125,22 @@ def ask_gemini(prompt: str, system_prompt: str, gemini_key: str, is_json: bool =
                         # Model hit daily cap or persistent limit: fallback to the next model in the chain!
                         break
 
-                raise e
+                raise ValueError(clean_error_message(e))
 
     raise ValueError(
         "تم تجاوز حد الاستخدام المؤقت (429 Rate Limit) على مفتاح Google Gemini الحالي لجميع النماذج. "
         "يرجى الانتظار لمدة دقيقة واحدة لإعادة تعبئة الحصة، أو استخدام مفتاح API مجاني جديد من Google AI Studio."
     )
 
+
 def ask_openai(prompt: str, system_prompt: str, openai_key: str, is_json: bool = False) -> str:
+    # Quota check (Point 16)
+    quota = get_daily_quota_status()
+    if quota.get("is_exceeded"):
+        raise ValueError(f"تم الوصول إلى سقف الاستخدام اليومي المحدد ({quota['daily_cap']} طلب/يوم).")
+
     from openai import OpenAI
-    client = OpenAI(api_key=openai_key)
+    client = OpenAI(api_key=openai_key, timeout=25.0)
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
@@ -131,8 +154,14 @@ def ask_openai(prompt: str, system_prompt: str, openai_key: str, is_json: bool =
     if is_json:
         kwargs["response_format"] = {"type": "json_object"}
         
-    response = client.chat.completions.create(**kwargs)
-    return response.choices[0].message.content.strip()
+    try:
+        response = client.chat.completions.create(**kwargs)
+        res_text = response.choices[0].message.content.strip()
+        record_ai_usage(tokens=len(prompt) // 4 + len(res_text) // 4)
+        return res_text
+    except Exception as e:
+        raise ValueError(clean_error_message(e))
+
 
 def ask_llm(
     prompt: str,
@@ -154,6 +183,7 @@ def ask_llm(
         return ask_openai(prompt, system_prompt, openai_key, is_json=is_json)
     else:
         raise ValueError("لم يتم إدخال مفتاح الذكاء الاصطناعي (Google Gemini أو OpenAI). يرجى إدخال المفتاح للبدء.")
+
 
 def ask_llm_json(
     prompt: str,
@@ -184,4 +214,4 @@ def ask_llm_json(
         match = re.search(r"(\{.*\}|\[.*\])", cleaned, re.DOTALL)
         if match:
             return json.loads(match.group(1))
-        raise ValueError(f"فشل تحليل الـ JSON المستلم من الذكاء الاصطناعي: {e}\nالنص:\n{response_text[:300]}")
+        raise ValueError(f"فشل تحليل الـ JSON المستلم من الذكاء الاصطناعي: {clean_error_message(e)}")

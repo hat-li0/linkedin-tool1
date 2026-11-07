@@ -1,3 +1,9 @@
+import os
+import re
+from pathlib import Path
+from security_guard import validate_uploaded_cv, sanitize_filename
+from security_logger import log_security_event
+
 # Safe resilient imports for document readers
 try:
     from pypdf import PdfReader
@@ -15,8 +21,14 @@ except Exception:
 from ai_engine import ask_llm_json
 
 def extract_text_from_file(file_path_or_bytes, filename: str) -> str:
-    """Extracts raw text from PDF, DOCX, or TXT."""
-    filename_lower = filename.lower()
+    """Extracts raw text from PDF, DOCX, or TXT with security validation (Points 9, 14)."""
+    # 1. Security validation: Size limits, extension allowlist, and magic bytes
+    is_valid, val_msg = validate_uploaded_cv(file_path_or_bytes, filename)
+    if not is_valid:
+        raise ValueError(val_msg)
+
+    clean_filename = sanitize_filename(filename)
+    filename_lower = clean_filename.lower()
     text = ""
     
     if hasattr(file_path_or_bytes, "seek"):

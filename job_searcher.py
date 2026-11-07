@@ -6,6 +6,8 @@ import concurrent.futures
 from bs4 import BeautifulSoup
 from typing import List, Dict, Tuple
 
+from security_guard import is_safe_outbound_url, sanitize_user_input
+
 __all__ = [
     "search_multi_source_jobs",
     "search_linkedin_jobs",
@@ -50,12 +52,13 @@ CITY_MAP = {
 }
 
 def normalize_city(city_input: str) -> str:
-    cleaned = city_input.strip()
+    cleaned = sanitize_user_input(city_input, max_length=50)
     return CITY_MAP.get(cleaned, cleaned)
 
 def clean_query_term(term: str) -> str:
-    """Removes slashes, parentheses, and extracts clean search query."""
-    cleaned = re.sub(r"[/\\()]", " ", term)
+    """Sanitizes search query term, removing malicious or control characters (Points 8, 14)."""
+    cleaned = sanitize_user_input(term, max_length=60)
+    cleaned = re.sub(r"[/\\()]", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
@@ -195,6 +198,12 @@ def _fetch_linkedin_jobs(keyword: str, location_query: str, easy_apply_only: boo
     url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={kw_encoded}&location={loc_encoded}&start={start}"
     if easy_apply_only:
         url += "&f_AL=true"
+    
+    # SSRF verification (Point 8)
+    is_safe, _ = is_safe_outbound_url(url)
+    if not is_safe:
+        return []
+
     try:
         res = _session.get(url, timeout=10)
         if res.status_code != 200:
@@ -217,7 +226,7 @@ def _fetch_linkedin_jobs(keyword: str, location_query: str, easy_apply_only: boo
             time_elem = card.find("time", class_="job-search-card__listdate") or card.find("time", class_="job-search-card__listdate--new")
             link_elem = card.find("a", class_="base-card__full-link")
 
-            company = company_elem.get_text(strip=True) if company_elem else "شركة غير معلنة"
+            company = company_elem.get_text(strip=True) if company_elem else "جهة عمل معلنة"
             location = location_elem.get_text(strip=True) if location_elem else location_query
             posted_time = time_elem.get_text(strip=True) if time_elem else "مؤخراً"
             link = link_elem["href"].split("?")[0] if link_elem and "href" in link_elem.attrs else f"https://www.linkedin.com/jobs/view/{job_id}/"
@@ -247,6 +256,12 @@ def _fetch_tanqeeb_jobs(keyword: str, location_query: str) -> List[Dict]:
     try:
         kw_enc = urllib.parse.quote(keyword)
         url = f"https://saudi.tanqeeb.com/ar/jobs/search?keywords={kw_enc}&search_in=jobs"
+        
+        # SSRF verification (Point 8)
+        is_safe, _ = is_safe_outbound_url(url)
+        if not is_safe:
+            return []
+
         res = _session.get(url, timeout=10)
         if res.status_code != 200:
             return []
@@ -313,6 +328,12 @@ def _fetch_remotive_jobs(keyword: str) -> List[Dict]:
     """Fetches relevant remote jobs from Remotive API."""
     try:
         url = f"https://remotive.com/api/remote-jobs?search={urllib.parse.quote(keyword)}&limit=15"
+        
+        # SSRF verification (Point 8)
+        is_safe, _ = is_safe_outbound_url(url)
+        if not is_safe:
+            return []
+
         res = _session.get(url, timeout=8)
         if res.status_code != 200:
             return []
@@ -348,7 +369,7 @@ def search_multi_source_jobs(
     max_results: int = None
 ) -> List[Dict]:
     """
-    Searches across multiple platforms (LinkedIn, Tanqeeb, Remotive) without artificial limits.
+    Searches across multiple platforms (LinkedIn, Tanqeeb, Remotive) with input sanitization.
     Calculates CV match scores for all posts, and returns results sorted by highest CV match first.
     """
     location_query = normalize_city(target_city)
@@ -439,24 +460,28 @@ def search_linkedin_jobs(
     )
 
 def fetch_job_description(job_id: str, job_dict: Dict = None) -> str:
-    """Fetches the full description text for a job."""
+    """Fetches the full description text for a job with SSRF checks (Point 8)."""
     if job_dict and job_dict.get("description") and len(job_dict["description"]) > 100:
         return job_dict["description"]
 
-    clean_id = str(job_id).replace("li_", "").replace("tq_", "").replace("rem_", "")
+    # Sanitize job_id to prevent path injection
+    clean_id = re.sub(r"[^a-zA-Z0-9_-]", "", str(job_id).replace("li_", "").replace("tq_", "").replace("rem_", ""))
     url = f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{clean_id}"
-    try:
-        res = requests.get(url, headers=HEADERS, timeout=10)
-        if res.status_code == 200:
-            soup = BeautifulSoup(res.text, "html.parser")
-            desc_elem = soup.find("div", class_="show-more-less-html__markup")
-            if desc_elem:
-                return desc_elem.get_text(separator="\n", strip=True)
-            article = soup.find("section", class_="description")
-            if article:
-                return article.get_text(separator="\n", strip=True)
-    except Exception as e:
-        print(f"Error fetching job description for {clean_id}: {e}")
+
+    is_safe, _ = is_safe_outbound_url(url)
+    if is_safe:
+        try:
+            res = requests.get(url, headers=HEADERS, timeout=10)
+            if res.status_code == 200:
+                soup = BeautifulSoup(res.text, "html.parser")
+                desc_elem = soup.find("div", class_="show-more-less-html__markup")
+                if desc_elem:
+                    return desc_elem.get_text(separator="\n", strip=True)
+                article = soup.find("section", class_="description")
+                if article:
+                    return article.get_text(separator="\n", strip=True)
+        except Exception as e:
+            print(f"Error fetching job description for {clean_id}: {e}")
 
     if job_dict and job_dict.get("description"):
         return job_dict["description"]

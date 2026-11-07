@@ -17,6 +17,9 @@ dist/
 # User Data, Secrets & Profiles (NEVER COMMIT)
 data/settings.json
 data/master_profile.json
+data/quota_usage.json
+data/security_audit.log
+data/*.log
 data/browser_profile/
 data/browser_profile/**
 .env
@@ -26,6 +29,8 @@ data/browser_profile/**
 # Generated Outputs & Private Resumes
 outputs/*.pdf
 outputs/*.txt
+outputs/sessions/
+outputs/sessions/**
 outputs/*
 !outputs/.gitkeep
 !data/.gitkeep

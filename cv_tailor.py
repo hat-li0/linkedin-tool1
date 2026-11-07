@@ -2,17 +2,22 @@ import os
 import json
 import re
 from pathlib import Path
+from typing import Optional
+
 from ai_engine import ask_llm_json, get_llm_client
 from config import OUTPUTS_DIR
+from security_guard import get_session_outputs_dir, sanitize_filename
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
+
 try:
     from reportlab.pdfbase.ttfonts import TTFont
 except Exception:
     TTFont = None
+
 try:
     import arabic_reshaper
 except ImportError:
@@ -34,17 +39,18 @@ FONT_CANDIDATES = [
     ('/usr/share/fonts/truetype/msttcorefonts/arial.ttf', '/usr/share/fonts/truetype/msttcorefonts/arialbd.ttf')
 ]
 
-for reg_path, bold_path in FONT_CANDIDATES:
-    if os.path.exists(reg_path):
-        try:
-            pdfmetrics.registerFont(TTFont('UnicodeFont', reg_path))
-            b_path = bold_path if os.path.exists(bold_path) else reg_path
-            pdfmetrics.registerFont(TTFont('UnicodeFont-Bold', b_path))
-            FONT_NAME = 'UnicodeFont'
-            FONT_BOLD = 'UnicodeFont-Bold'
-            break
-        except Exception as e:
-            print(f"Font notice: {e}")
+if TTFont is not None:
+    for reg_path, bold_path in FONT_CANDIDATES:
+        if os.path.exists(reg_path):
+            try:
+                pdfmetrics.registerFont(TTFont('UnicodeFont', reg_path))
+                b_path = bold_path if os.path.exists(bold_path) else reg_path
+                pdfmetrics.registerFont(TTFont('UnicodeFont-Bold', b_path))
+                FONT_NAME = 'UnicodeFont'
+                FONT_BOLD = 'UnicodeFont-Bold'
+                break
+            except Exception as e:
+                print(f"Font notice: {e}")
 
 def safe_render_text(text: str) -> str:
     """
@@ -163,14 +169,21 @@ Candidate Master Profile:
             "cover_letter": f"Dear Hiring Team at {company},\n\nI am writing to express my strong interest in the {job_title} role. With my background in {cand_major}, I am confident in my ability to contribute effectively to your organization.\n\nSincerely,\n{cand_name}"
         }
 
-def generate_pdf_resume(master_profile: dict, tailored_data: dict, job_title: str, company: str) -> str:
+def generate_pdf_resume(master_profile: dict, tailored_data: dict, job_title: str, company: str, session_id: Optional[str] = None) -> str:
     """
     Generates an elegant, ATS-compliant, single/double page professional PDF resume.
-    Uses registered Arial TTF font to completely prevent any character corruption.
+    Ensures Session-Level Data Isolation (Point 10) so files are isolated per user.
     """
-    safe_name = "".join(c for c in f"{job_title}_{company}" if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
+    safe_name = sanitize_filename(f"{job_title}_{company}".replace(" ", "_"))
     output_filename = f"CV_{safe_name}.pdf"
-    output_path = OUTPUTS_DIR / output_filename
+    
+    # Isolate output by session to prevent cross-user leakage (Point 10)
+    if session_id:
+        target_dir = get_session_outputs_dir(session_id)
+    else:
+        target_dir = OUTPUTS_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+    output_path = target_dir / output_filename
 
     doc = SimpleDocTemplate(
         str(output_path),

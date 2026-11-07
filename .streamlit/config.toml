@@ -7,9 +7,12 @@ textColor = "#F8FAFC"
 font = "sans serif"
 
 [client]
-showErrorDetails = true
+# Point 13 (Don't send extra data): Prevent internal stack trace leaks to users
+showErrorDetails = false
 
 [server]
 headless = true
+# Point 8 & 14 (Secure endpoints & CSRF protection): Enable XSRF protection
+enableXsrfProtection = true
 enableCORS = false
-enableXsrfProtection = false
+maxUploadSize = 10
