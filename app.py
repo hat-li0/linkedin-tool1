@@ -1412,7 +1412,7 @@ with tabs[4]:
         col_adm1, col_adm2 = st.columns([1, 1])
         with col_adm1:
             adm_pass = st.text_input("كلمة مرور المسؤول (Admin Password):", type="password", key="sec_admin_pass")
-            adm_totp = st.text_input("رمز التحقق بخطوتين 2FA (اختياري/إذا كان مفعلاً):", type="text", key="sec_admin_totp", placeholder="مثال: 123456")
+            adm_totp = st.text_input("رمز التحقق بخطوتين 2FA (اختياري/إذا كان مفعلاً):", key="sec_admin_totp", placeholder="مثال: 123456")
             if st.button("🔑 دخول المسؤول", type="secondary"):
                 allowed, wait_sec, limit_msg = check_auth_rate_limit("admin_portal")
                 if not allowed:
