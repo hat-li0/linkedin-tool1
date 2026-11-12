@@ -9,6 +9,7 @@ font = "sans serif"
 [client]
 # Point 13 (Don't send extra data): Prevent internal stack trace leaks to users
 showErrorDetails = false
+toolbarMode = "minimal"
 
 [server]
 headless = true

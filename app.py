@@ -496,15 +496,24 @@ st.markdown(f"""
     }}
     /* Hide Streamlit Default Chrome & Developer Badges */
     #MainMenu,
-    [data-testid="stToolbar"],
+    header[data-testid="stHeader"] .stDeployButton,
     .stDeployButton,
+    [data-testid="stDeployButton"],
+    div[class*="stDeployButton"],
+    [data-testid="stToolbar"],
+    .stToolbar,
     footer,
-    [data-testid="stDecoration"] {{
+    [data-testid="stDecoration"],
+    div[data-testid="stStatusWidget"] {{
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
+        width: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }}
 
+    /* Keep header background clean and prevent toolbar from showing */
     [data-testid="stHeader"] {{
         background: transparent !important;
     }}
