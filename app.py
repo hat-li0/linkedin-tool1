@@ -150,16 +150,16 @@ with st.sidebar:
         st.caption(f"🔒 تمويه المفتاح: `{mask_secret(st.session_state['gemini_api_key'])}`")
 
     st.markdown("---")
-    st.subheader("🛡️ حالة حماية النظام والأمان")
-    quota_st = get_daily_quota_status()
-    st.caption(f"🔒 **عزل الجلسة:** `ID: {session_id[:8]}...`")
-    st.caption(f"📊 **استهلاك الذكاء الاصطناعي:** `{quota_st['used_requests']}/{quota_st['daily_cap']} طلب اليوم`")
-    st.markdown(
-        '<div style="background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 6px; padding: 6px 10px; text-align: center; color: #C9A84C; font-weight: 700; font-size: 0.8rem;">'
-        '🛡️ فحص الأمان: 20/20 بنود معتمدة'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    with st.expander("🛡️ تفاصيل حماية الجلسة والكوتا", expanded=False):
+        quota_st = get_daily_quota_status()
+        st.caption(f"🔒 **عزل الجلسة:** `ID: {session_id[:8]}...`")
+        st.caption(f"📊 **استهلاك الذكاء الاصطناعي:** `{quota_st['used_requests']}/{quota_st['daily_cap']} طلب اليوم`")
+        st.markdown(
+            '<div style="background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 6px; padding: 6px 10px; text-align: center; color: #C9A84C; font-weight: 700; font-size: 0.8rem;">'
+            '🛡️ فحص الأمان: 20/20 بنود معتمدة'
+            '</div>',
+            unsafe_allow_html=True
+        )
 
     st.markdown("---")
     st.header("🖥️ نمط العرض ونوع الجهاز")
@@ -494,10 +494,19 @@ st.markdown(f"""
         direction: rtl;
         text-align: right;
     }}
+    /* Hide Streamlit Default Chrome & Developer Badges */
+    #MainMenu,
+    [data-testid="stToolbar"],
+    .stDeployButton,
+    footer,
+    [data-testid="stDecoration"] {{
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+    }}
+
     [data-testid="stHeader"] {{
-        background: rgba(9,9,11,0.92) !important;
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--border) !important;
+        background: transparent !important;
     }}
 
     /* ─── Hero ───────────────────────────────────────────────── */
@@ -1658,7 +1667,7 @@ with tabs[4]:
                         record_failed_auth("admin_portal")
                         st.error(msg)
         with col_adm2:
-            st.info("💡 كلمة المرور الافتراضية للبيئة المحلية هي `Admin@2026Secure!` (يمكنك تخصيصها وتعيين مفتاح 2FA في ملف `.env` عبر `APP_ADMIN_PASSWORD` و `APP_ADMIN_2FA_SECRET`).")
+            st.info("💡 أدخل كلمة مرور المسؤول المعتمدة في ملف الإعدادات للمتابعة وتدقيق السجلات.")
     else:
         st.success("🟢 أنت مسجل حالياً بصلاحيات مسؤول النظام (Administrator RBAC Active)")
         col_lg1, col_lg2 = st.columns([3, 1])
