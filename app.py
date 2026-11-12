@@ -48,8 +48,8 @@ from security_crypto import mask_secret
 from security_logger import get_recent_security_logs
 
 st.set_page_config(
-    page_title="مساعد التوظيف الذكي و مخصص الـ CV",
-    page_icon="💼",
+    page_title="AutoJob AI — مساعد التوظيف الذكي",
+    page_icon="✦",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -76,9 +76,9 @@ session_id = get_or_create_session_id(st.session_state)
 # App Access Gate Authentication (Point 4)
 if is_app_password_required() and not st.session_state.get("app_authenticated", False):
     st.markdown("""
-    <div style="max-width: 520px; margin: 40px auto 20px auto; padding: 32px; background: #0F172A; border: 1px solid #334155; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <h2 style="color: #38BDF8; margin-bottom: 8px;">🔒 تسجيل الدخول إلى النظام</h2>
-        <p style="color: #94A3B8; font-size: 0.95rem;">هذا التطبيق محمي برمز مرور دخول لحماية البيانات والموارد. يرجى إدخال رمز المرور للمتابعة:</p>
+    <div style="max-width: 460px; margin: 60px auto 20px auto; padding: 36px 32px; background: #111113; border: 1px solid #26262B; border-top: 3px solid #C9A84C; border-radius: 10px; text-align: center;">
+        <h2 style="color: #EDEDEC; margin-bottom: 8px; font-family: Tajawal, Cairo, sans-serif; font-size: 1.5rem;">🔒 تسجيل الدخول</h2>
+        <p style="color: #7D7D80; font-size: 0.9rem; line-height: 1.65; margin: 0 0 20px 0;">هذا التطبيق محمي برمز مرور لحماية بياناتك. أدخل الرمز للمتابعة.</p>
     </div>
     """, unsafe_allow_html=True)
     col_g1, col_g2, col_g3 = st.columns([1, 2, 1])
@@ -155,7 +155,7 @@ with st.sidebar:
     st.caption(f"🔒 **عزل الجلسة:** `ID: {session_id[:8]}...`")
     st.caption(f"📊 **استهلاك الذكاء الاصطناعي:** `{quota_st['used_requests']}/{quota_st['daily_cap']} طلب اليوم`")
     st.markdown(
-        '<div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 10px; padding: 6px 10px; text-align: center; color: #34D399; font-weight: 700; font-size: 0.82rem;">'
+        '<div style="background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 6px; padding: 6px 10px; text-align: center; color: #C9A84C; font-weight: 700; font-size: 0.8rem;">'
         '🛡️ فحص الأمان: 20/20 بنود معتمدة'
         '</div>',
         unsafe_allow_html=True
@@ -205,31 +205,30 @@ with st.sidebar:
 # ----------------- DYNAMIC CSS GENERATION -----------------
 desktop_css_rules = """
     .block-container {
-        max-width: 1160px !important;
+        max-width: 1180px !important;
         padding-top: 1.5rem !important;
         padding-bottom: 4rem !important;
     }
     .dark-hero {
-        border-radius: 20px !important;
-        padding: 26px 32px !important;
-        margin-bottom: 20px !important;
+        border-radius: 10px !important;
+        padding: 32px 40px !important;
+        margin-bottom: 24px !important;
     }
     .dark-hero-title {
-        font-size: 1.95rem !important;
+        font-size: 2.1rem !important;
     }
     .dark-hero-desc {
-        font-size: 1.05rem !important;
+        font-size: 1rem !important;
     }
     .stTabs [data-baseweb="tab-list"] {
         justify-content: flex-start !important;
         direction: rtl !important;
-        gap: 10px !important;
-        padding-bottom: 10px !important;
+        gap: 0 !important;
+        padding-bottom: 0 !important;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 12px !important;
         padding: 10px 22px !important;
-        font-size: 15px !important;
+        font-size: 14px !important;
     }
     [data-testid="stHorizontalBlock"] {
         flex-wrap: nowrap !important;
@@ -237,28 +236,28 @@ desktop_css_rules = """
     }
     .dark-card, .job-card-dark {
         padding: 22px 26px !important;
-        border-radius: 18px !important;
-        margin-bottom: 16px !important;
+        border-radius: 10px !important;
+        margin-bottom: 14px !important;
     }
     [data-testid="stMetric"] {
-        border-radius: 14px !important;
+        border-radius: 10px !important;
         padding: 16px 18px !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 14px !important;
+        font-size: 0.78rem !important;
     }
     [data-testid="stMetricValue"] {
-        font-size: 24px !important;
+        font-size: 1.5rem !important;
     }
     .stButton > button, .stDownloadButton > button {
-        padding: 0.65rem 1.6rem !important;
-        font-size: 15px !important;
-        min-height: 44px !important;
+        padding: 0.6rem 1.5rem !important;
+        font-size: 14px !important;
+        min-height: 42px !important;
     }
     .chip {
-        padding: 5px 14px !important;
-        font-size: 13.5px !important;
-        margin: 4px 6px 4px 0 !important;
+        padding: 3px 10px !important;
+        font-size: 12px !important;
+        margin: 3px 5px 3px 0 !important;
     }
     .pdf-iframe {
         height: 640px !important;
@@ -267,30 +266,29 @@ desktop_css_rules = """
 
 tablet_css_rules = """
     .block-container {
-        max-width: 860px !important;
+        max-width: 880px !important;
         padding: 1.2rem 1.4rem 3.5rem 1.4rem !important;
     }
     .dark-hero {
-        border-radius: 16px !important;
-        padding: 20px 24px !important;
-        margin-bottom: 16px !important;
+        border-radius: 8px !important;
+        padding: 22px 26px !important;
+        margin-bottom: 18px !important;
     }
     .dark-hero-title {
-        font-size: 1.6rem !important;
+        font-size: 1.65rem !important;
     }
     .dark-hero-desc {
-        font-size: 0.95rem !important;
+        font-size: 0.93rem !important;
     }
     .stTabs [data-baseweb="tab-list"] {
         justify-content: flex-start !important;
         direction: rtl !important;
-        gap: 8px !important;
-        padding-bottom: 8px !important;
+        gap: 0 !important;
+        padding-bottom: 0 !important;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 10px !important;
-        padding: 9px 18px !important;
-        font-size: 14px !important;
+        padding: 9px 16px !important;
+        font-size: 13px !important;
     }
     [data-testid="stHorizontalBlock"] {
         flex-wrap: wrap !important;
@@ -302,27 +300,27 @@ tablet_css_rules = """
     }
     .dark-card, .job-card-dark {
         padding: 18px 20px !important;
-        border-radius: 16px !important;
-        margin-bottom: 14px !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
     }
     [data-testid="stMetric"] {
-        border-radius: 12px !important;
+        border-radius: 8px !important;
         padding: 14px 16px !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 13px !important;
+        font-size: 0.75rem !important;
     }
     [data-testid="stMetricValue"] {
-        font-size: 21px !important;
+        font-size: 1.3rem !important;
     }
     .stButton > button, .stDownloadButton > button {
-        min-height: 48px !important;
-        font-size: 15px !important;
-        padding: 0.6rem 1.4rem !important;
+        min-height: 46px !important;
+        font-size: 14px !important;
+        padding: 0.55rem 1.3rem !important;
     }
     .chip {
-        padding: 4px 12px !important;
-        font-size: 13px !important;
+        padding: 3px 9px !important;
+        font-size: 11.5px !important;
         margin: 3px 4px 3px 0 !important;
     }
     .pdf-iframe {
@@ -333,35 +331,40 @@ tablet_css_rules = """
 mobile_css_rules = """
     .block-container {
         max-width: 100% !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        padding-top: 0.6rem !important;
+        padding-left: 0.6rem !important;
+        padding-right: 0.6rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 3.5rem !important;
     }
     .dark-hero {
-        border-radius: 14px !important;
-        padding: 15px 14px !important;
-        margin-bottom: 12px !important;
+        border-radius: 8px !important;
+        padding: 18px 16px !important;
+        margin-bottom: 14px !important;
     }
     .dark-hero-title {
-        font-size: 1.25rem !important;
-        line-height: 1.35 !important;
+        font-size: 1.35rem !important;
+        line-height: 1.3 !important;
     }
     .dark-hero-desc {
-        font-size: 0.85rem !important;
-        line-height: 1.5 !important;
+        font-size: 0.84rem !important;
+        line-height: 1.55 !important;
+    }
+    .hero-stat-row {
+        gap: 16px !important;
+    }
+    .hero-stat-num {
+        font-size: 1.2rem !important;
     }
     .stTabs [data-baseweb="tab-list"] {
         justify-content: flex-start !important;
         direction: rtl !important;
-        gap: 5px !important;
-        padding-bottom: 6px !important;
+        gap: 0 !important;
+        padding-bottom: 0 !important;
         overflow-x: auto !important;
         flex-wrap: nowrap !important;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px !important;
-        padding: 7px 11px !important;
+        padding: 8px 13px !important;
         font-size: 12px !important;
         white-space: nowrap !important;
     }
@@ -375,30 +378,30 @@ mobile_css_rules = """
         margin-bottom: 6px !important;
     }
     .dark-card, .job-card-dark {
-        padding: 14px 12px !important;
-        border-radius: 13px !important;
-        margin-bottom: 12px !important;
+        padding: 14px 14px !important;
+        border-radius: 8px !important;
+        margin-bottom: 10px !important;
     }
     [data-testid="stMetric"] {
-        border-radius: 11px !important;
+        border-radius: 8px !important;
         padding: 10px 12px !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 12px !important;
+        font-size: 0.72rem !important;
     }
     [data-testid="stMetricValue"] {
-        font-size: 18px !important;
+        font-size: 1.15rem !important;
     }
     .stButton > button, .stDownloadButton > button {
         width: 100% !important;
-        min-height: 50px !important;
-        font-size: 15px !important;
+        min-height: 48px !important;
+        font-size: 14px !important;
         margin-top: 4px !important;
         margin-bottom: 4px !important;
     }
     .chip {
-        padding: 3px 9px !important;
-        font-size: 12px !important;
+        padding: 2px 8px !important;
+        font-size: 11px !important;
         margin: 2px 2px !important;
     }
     .pdf-iframe {
@@ -428,13 +431,43 @@ else:
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
-    
-    /* Scoped Typography - Protect Material Symbols icons */
-    html, body, p, h1, h2, h3, h4, h5, h6, label, input, textarea, select, button, .stMarkdown, [data-testid="stMarkdownContainer"] {{
-        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+    /* ─── Design Tokens ─────────────────────────────────────── */
+    :root {{
+        --bg-void:      #09090B;
+        --bg-surface:   #111113;
+        --bg-raised:    #18181C;
+        --bg-hover:     #22222A;
+        --gold:         #C9A84C;
+        --gold-muted:   #8A6F33;
+        --gold-glow:    rgba(201,168,76,0.18);
+        --gold-line:    rgba(201,168,76,0.4);
+        --text-primary: #EDEDEC;
+        --text-secondary: #7D7D80;
+        --text-tertiary: #4A4A50;
+        --border:       #26262B;
+        --border-soft:  #1E1E22;
+        --success:      #22C55E;
+        --warn:         #EAB308;
+        --danger:       #EF4444;
+        --info:         #3B82F6;
+        --radius-sm:    6px;
+        --radius-md:    10px;
+        --radius-lg:    16px;
     }}
 
+    /* ─── Typography ─────────────────────────────────────────── */
+    html, body, p, h1, h2, h3, h4, h5, h6,
+    label, input, textarea, select, button,
+    .stMarkdown, [data-testid="stMarkdownContainer"] {{
+        font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: var(--text-primary) !important;
+    }}
+    h1, h2, h3, .hero-title {{
+        font-family: 'Tajawal', 'Cairo', sans-serif !important;
+        letter-spacing: -0.01em;
+    }}
     [data-testid="stIcon"],
     [data-testid="stSidebarCollapseButton"] *,
     [data-testid="stToolbar"] *,
@@ -450,133 +483,220 @@ st.markdown(f"""
         text-rendering: optimizeLegibility;
     }}
 
-    /* Dark App Container & RTL Direction */
+    /* ─── App Shell ──────────────────────────────────────────── */
     .stApp {{
-        background-color: #0B0F19 !important;
-        color: #F8FAFC !important;
+        background-color: var(--bg-void) !important;
+        color: var(--text-primary) !important;
     }}
-
     [data-testid="stMainBlockContainer"],
-    .dark-card,
-    .job-card-dark,
-    .stMarkdown,
-    [data-testid="stExpander"],
-    .stAlert {{
+    .dark-card, .job-card-dark,
+    .stMarkdown, [data-testid="stExpander"], .stAlert {{
         direction: rtl;
         text-align: right;
     }}
-
     [data-testid="stHeader"] {{
-        background: rgba(11, 15, 25, 0.85) !important;
-        backdrop-filter: blur(8px);
+        background: rgba(9,9,11,0.92) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border) !important;
     }}
 
-    /* Device Mode Pill Badge */
+    /* ─── Hero ───────────────────────────────────────────────── */
+    .dark-hero {{
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--gold);
+        direction: rtl;
+        text-align: right;
+        position: relative;
+        overflow: hidden;
+    }}
+    .dark-hero::before {{
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(ellipse 55% 60% at 15% 50%, var(--gold-glow), transparent 70%);
+        pointer-events: none;
+    }}
+    .dark-hero-title {{
+        font-family: 'Tajawal', 'Cairo', sans-serif !important;
+        font-weight: 900 !important;
+        margin: 0 0 10px 0;
+        font-size: 2.1rem;
+        line-height: 1.2;
+        color: var(--text-primary) !important;
+        -webkit-text-fill-color: unset !important;
+        background: none !important;
+        -webkit-background-clip: unset !important;
+        letter-spacing: -0.02em;
+        text-align: right;
+    }}
+    .dark-hero-title span.gold {{
+        color: var(--gold) !important;
+    }}
+    .dark-hero-desc {{
+        color: var(--text-secondary) !important;
+        margin: 0;
+        line-height: 1.65;
+        font-size: 1rem;
+        max-width: 68ch;
+        text-align: right;
+    }}
+    .hero-stat-row {{
+        display: flex;
+        gap: 28px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        direction: rtl;
+        justify-content: flex-start;
+        align-items: center;
+    }}
+    .hero-stat {{
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: right;
+    }}
+    .hero-stat-num {{
+        font-family: 'Tajawal', sans-serif !important;
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--gold) !important;
+        line-height: 1;
+    }}
+    .hero-stat-label {{
+        font-size: 0.75rem;
+        color: var(--text-tertiary) !important;
+        font-weight: 600;
+    }}
+    .hero-divider {{
+        width: 1px;
+        height: 36px;
+        background: var(--border);
+        flex-shrink: 0;
+    }}
+
+    /* ─── Cards ──────────────────────────────────────────────── */
+    .dark-card {{
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        border-right: 3px solid var(--gold-muted);
+        padding: 20px 22px;
+        border-radius: var(--radius-md);
+        margin-bottom: 14px;
+    }}
+    .job-card-dark {{
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        border-right: 3px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 20px 22px;
+        margin-bottom: 14px;
+        transition: border-right-color 0.18s ease, background 0.18s ease;
+    }}
+    .job-card-dark:hover {{
+        border-right-color: var(--gold);
+        background: var(--bg-hover);
+    }}
+
+    /* ─── Chips / Badges ─────────────────────────────────────── */
+    .chip {{
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 12px;
+        padding: 3px 10px;
+    }}
+    .chip-cyan {{
+        background: rgba(59,130,246,0.1);
+        color: #60A5FA;
+        border: 1px solid rgba(59,130,246,0.25);
+    }}
+    .chip-emerald {{
+        background: rgba(34,197,94,0.1);
+        color: #4ADE80;
+        border: 1px solid rgba(34,197,94,0.25);
+    }}
+    .chip-amber {{
+        background: rgba(234,179,8,0.1);
+        color: #FACC15;
+        border: 1px solid rgba(234,179,8,0.25);
+    }}
+    .chip-purple {{
+        background: rgba(168,85,247,0.1);
+        color: #C084FC;
+        border: 1px solid rgba(168,85,247,0.25);
+    }}
+    .chip-gold {{
+        background: var(--gold-glow);
+        color: var(--gold);
+        border: 1px solid var(--gold-line);
+    }}
     .device-badge-tag {{
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 5px 12px;
-        border-radius: 9999px;
-        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 11px;
         font-weight: 700;
-        background: rgba(56, 189, 248, 0.15);
-        color: #38BDF8;
-        border: 1px solid rgba(56, 189, 248, 0.35);
-        white-space: nowrap;
+        background: var(--gold-glow);
+        color: var(--gold);
+        border: 1px solid var(--gold-line);
     }}
 
-    /* Base Hero Header */
-    .dark-hero {{
-        background: linear-gradient(135deg, #111827 0%, #1E293B 50%, #0F172A 100%);
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        direction: rtl;
-        text-align: right;
-    }}
-    .dark-hero-title {{
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        background: linear-gradient(135deg, #FFFFFF 30%, #38BDF8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }}
-    .dark-hero-desc {{
-        color: #94A3B8;
-        margin: 0;
-        line-height: 1.6;
-    }}
-
-    /* Dark Cards & Surfaces */
-    .dark-card {{
-        background: #161F30;
-        border: 1px solid #283548;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    }}
-
-    .job-card-dark {{
-        background: #161F30;
-        border: 1px solid #283548;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-        transition: all 0.2s ease;
-    }}
-    .job-card-dark:hover {{
-        border-color: #38BDF8;
-        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
-    }}
-
-    /* Glowing Dark Chips */
-    .chip {{
-        display: inline-flex;
-        align-items: center;
-        border-radius: 9999px;
-        font-weight: 700;
-    }}
-    .chip-cyan {{
-        background: rgba(56, 189, 248, 0.12);
-        color: #38BDF8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
-    }}
-    .chip-emerald {{
-        background: rgba(52, 211, 153, 0.12);
-        color: #34D399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
-    }}
-    .chip-amber {{
-        background: rgba(251, 191, 36, 0.12);
-        color: #FBBF24;
-        border: 1px solid rgba(251, 191, 36, 0.3);
-    }}
-    .chip-purple {{
-        background: rgba(192, 132, 252, 0.12);
-        color: #C084FC;
-        border: 1px solid rgba(192, 132, 252, 0.3);
-    }}
-
-    /* Buttons */
+    /* ─── Buttons ────────────────────────────────────────────── */
     .stButton > button {{
-        border-radius: 12px !important;
-        font-weight: 800 !important;
-        transition: all 0.2s ease !important;
-        border: 1px solid #334155 !important;
-        background-color: #1E293B !important;
-        color: #F8FAFC !important;
+        border-radius: var(--radius-sm) !important;
+        font-weight: 700 !important;
+        font-family: 'Cairo', sans-serif !important;
+        transition: all 0.15s ease !important;
+        border: 1px solid var(--border) !important;
+        background-color: var(--bg-raised) !important;
+        color: var(--text-secondary) !important;
+        letter-spacing: 0;
     }}
     .stButton > button:hover {{
-        border-color: #38BDF8 !important;
-        box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+        border-color: var(--gold-muted) !important;
+        color: var(--text-primary) !important;
+        background-color: var(--bg-hover) !important;
     }}
-    .stButton > button[kind="primary"], .stDownloadButton > button {{
-        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
-        color: #0F172A !important;
+    .stButton > button[kind="primary"] {{
+        background: var(--gold) !important;
+        color: #0A0A0B !important;
         border: none !important;
-        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35) !important;
+        font-weight: 800 !important;
+        box-shadow: 0 2px 12px var(--gold-glow) !important;
     }}
-    .stButton > button[kind="primary"]:hover, .stDownloadButton > button:hover {{
-        box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5) !important;
+    .stButton > button[kind="primary"]:hover {{
+        background: #D4B060 !important;
+        box-shadow: 0 4px 20px rgba(201,168,76,0.35) !important;
+    }}
+    .stDownloadButton > button {{
+        background: var(--gold) !important;
+        color: #0A0A0B !important;
+        border: none !important;
+        font-weight: 800 !important;
+        border-radius: var(--radius-sm) !important;
+        box-shadow: 0 2px 12px var(--gold-glow) !important;
+    }}
+    .stDownloadButton > button:hover {{
+        background: #D4B060 !important;
+        box-shadow: 0 4px 20px rgba(201,168,76,0.35) !important;
+    }}
+    .stLinkButton > a {{
+        border-radius: var(--radius-sm) !important;
+        font-weight: 700 !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        background: var(--bg-raised) !important;
+    }}
+    .stLinkButton > a:hover {{
+        border-color: var(--gold-muted) !important;
+        color: var(--text-primary) !important;
     }}
 
-    /* Tabs Base Styling: Hide native underline and highlight bar */
+    /* ─── Tabs ───────────────────────────────────────────────── */
     .stTabs [data-baseweb="tab-border"],
     .stTabs [data-baseweb="tab-highlight"],
     [data-testid="stTabs"] [data-baseweb="tab-border"],
@@ -585,126 +705,215 @@ st.markdown(f"""
         background: transparent !important;
         height: 0 !important;
     }}
-
     .stTabs [data-baseweb="tab-list"],
     [data-testid="stTabs"] [data-baseweb="tab-list"] {{
         justify-content: flex-start !important;
         direction: rtl !important;
-        gap: 8px !important;
+        gap: 0 !important;
         border: none !important;
+        border-bottom: 1px solid var(--border) !important;
         scrollbar-width: none;
+        padding-bottom: 0 !important;
+        margin-bottom: 20px;
     }}
     .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar,
     [data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {{
         display: none;
     }}
-
-    /* All Tabs: Rounded luxury dark pill buttons with high specificity */
     .stTabs [data-baseweb="tab"],
     [data-testid="stTabs"] [data-baseweb="tab"],
     button[data-baseweb="tab"],
     div[data-baseweb="tab-list"] button {{
-        background-color: #161F30 !important;
-        border: 1px solid #283548 !important;
-        border-radius: 12px !important;
-        color: #94A3B8 !important;
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        padding: 9px 18px !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-bottom: 2px solid transparent !important;
+        border-radius: 0 !important;
+        color: var(--text-tertiary) !important;
+        font-weight: 600 !important;
+        font-size: 13.5px !important;
+        padding: 10px 18px !important;
         white-space: nowrap !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-        transition: all 0.2s ease !important;
+        box-shadow: none !important;
+        transition: all 0.15s ease !important;
         outline: none !important;
+        margin-bottom: -1px;
     }}
-
     .stTabs [data-baseweb="tab"]:hover,
     [data-testid="stTabs"] [data-baseweb="tab"]:hover,
     div[data-baseweb="tab-list"] button:hover {{
-        border-color: #38BDF8 !important;
-        color: #F8FAFC !important;
-        background-color: #1E293B !important;
+        border-bottom-color: var(--gold-muted) !important;
+        color: var(--text-secondary) !important;
+        background-color: transparent !important;
     }}
-
-    /* Selected Active Tab: Glowing Cyan Pill Button */
     .stTabs [aria-selected="true"],
     [data-testid="stTabs"] [aria-selected="true"],
     button[data-baseweb="tab"][aria-selected="true"],
     div[data-baseweb="tab-list"] button[aria-selected="true"] {{
-        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
-        color: #0F172A !important;
-        font-weight: 900 !important;
-        border: 1px solid #38BDF8 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4) !important;
+        background: transparent !important;
+        color: var(--gold) !important;
+        font-weight: 800 !important;
+        border: none !important;
+        border-bottom: 2px solid var(--gold) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }}
-
-    /* Ensure text inside active tab is dark obsidian for high contrast */
     .stTabs [aria-selected="true"] p,
     [data-testid="stTabs"] [aria-selected="true"] p,
     button[data-baseweb="tab"][aria-selected="true"] p {{
-        color: #0F172A !important;
-        font-weight: 900 !important;
+        color: var(--gold) !important;
+        font-weight: 800 !important;
     }}
-
-    /* Inactive tab text */
     .stTabs [aria-selected="false"] p,
     [data-testid="stTabs"] [aria-selected="false"] p,
     button[data-baseweb="tab"][aria-selected="false"] p {{
-        color: #94A3B8 !important;
+        color: var(--text-tertiary) !important;
     }}
 
-    /* File Uploader Fix: Keep internal dropzone in LTR so Browse button & text never collide */
+    /* ─── Inputs ─────────────────────────────────────────────── */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > div {{
+        background-color: var(--bg-raised) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-primary) !important;
+        border-radius: var(--radius-sm) !important;
+        font-family: 'Cairo', sans-serif !important;
+    }}
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {{
+        border-color: var(--gold-muted) !important;
+        box-shadow: 0 0 0 2px var(--gold-glow) !important;
+    }}
+    .stSelectbox label, .stTextInput label,
+    .stTextArea label, .stFileUploader label,
+    .stCheckbox label, .stRadio label {{
+        color: var(--text-secondary) !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+    }}
+
+    /* ─── File Uploader ─────────────────────────────────────── */
     [data-testid="stFileUploader"] {{
         direction: ltr !important;
     }}
     [data-testid="stFileUploader"] section {{
         direction: ltr !important;
         text-align: left !important;
+        background: var(--bg-raised) !important;
+        border: 1px dashed var(--border) !important;
+        border-radius: var(--radius-md) !important;
     }}
     [data-testid="stFileUploaderDropzone"] {{
         direction: ltr !important;
         text-align: left !important;
-        padding: 1rem 1.5rem !important;
+        padding: 1.2rem 1.5rem !important;
+    }}
+    [data-testid="stFileUploaderDropzone"]:hover {{
+        border-color: var(--gold-muted) !important;
     }}
 
-    /* Metrics & Expanders */
+    /* ─── Metrics ────────────────────────────────────────────── */
     [data-testid="stMetric"] {{
-        background: #161F30 !important;
-        border: 1px solid #283548 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        background: var(--bg-raised) !important;
+        border: 1px solid var(--border) !important;
+        border-top: 2px solid var(--gold-muted) !important;
+        border-radius: var(--radius-md) !important;
+        box-shadow: none !important;
+        padding: 14px 16px !important;
     }}
     [data-testid="stMetricLabel"] {{
-        font-weight: 700 !important;
-        color: #94A3B8 !important;
+        font-weight: 600 !important;
+        font-size: 0.78rem !important;
+        color: var(--text-tertiary) !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
     }}
     [data-testid="stMetricValue"] {{
-        font-weight: 900 !important;
-        color: #38BDF8 !important;
+        font-family: 'Tajawal', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 1.5rem !important;
+        color: var(--text-primary) !important;
     }}
+    [data-testid="stMetricDelta"] {{
+        font-size: 0.75rem !important;
+    }}
+
+    /* ─── Expanders ──────────────────────────────────────────── */
     .streamlit-expanderHeader {{
-        background-color: #161F30 !important;
-        border-radius: 12px !important;
-        border: 1px solid #283548 !important;
-        color: #F8FAFC !important;
+        background-color: var(--bg-raised) !important;
+        border-radius: var(--radius-sm) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
         font-weight: 700 !important;
     }}
     [data-testid="stExpander"] {{
-        background-color: #161F30 !important;
-        border: 1px solid #283548 !important;
-        border-radius: 14px !important;
-    }}
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea {{
-        background-color: #161F30 !important;
-        border: 1px solid #334155 !important;
-        color: #F8FAFC !important;
-        border-radius: 10px !important;
-    }}
-    .stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus {{
-        border-color: #38BDF8 !important;
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2) !important;
+        background-color: var(--bg-raised) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
     }}
 
-    /* Injected Device-Specific Rules */
+    /* ─── Alerts ─────────────────────────────────────────────── */
+    .stAlert {{
+        border-radius: var(--radius-sm) !important;
+        border-left: none !important;
+        border-right: 3px solid currentColor !important;
+    }}
+    .stAlert[data-baseweb="notification"] {{
+        background: var(--bg-raised) !important;
+    }}
+
+    /* ─── Progress Bar ───────────────────────────────────────── */
+    [data-testid="stProgress"] > div > div {{
+        background: var(--border) !important;
+        border-radius: 2px !important;
+        height: 3px !important;
+    }}
+    [data-testid="stProgress"] > div > div > div {{
+        background: var(--gold) !important;
+        border-radius: 2px !important;
+    }}
+
+    /* ─── Sidebar ────────────────────────────────────────────── */
+    [data-testid="stSidebar"] {{
+        background: var(--bg-surface) !important;
+        border-left: 1px solid var(--border) !important;
+    }}
+    [data-testid="stSidebar"] .stMarkdown,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label {{
+        color: var(--text-secondary) !important;
+    }}
+
+    /* ─── Divider ────────────────────────────────────────────── */
+    hr {{
+        border: none !important;
+        border-top: 1px solid var(--border) !important;
+        margin: 20px 0 !important;
+    }}
+
+    /* ─── Scrollbar ──────────────────────────────────────────── */
+    * {{
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+    }}
+    *::-webkit-scrollbar {{ width: 4px; height: 4px; }}
+    *::-webkit-scrollbar-track {{ background: transparent; }}
+    *::-webkit-scrollbar-thumb {{
+        background: var(--border);
+        border-radius: 2px;
+    }}
+
+    /* ─── Section Label ──────────────────────────────────────── */
+    .section-label {{
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--gold);
+        margin-bottom: 10px;
+        display: block;
+    }}
+
+    /* ─── Injected Device-Specific Rules ─────────────────────── */
     {device_specific_css}
 </style>
 """, unsafe_allow_html=True)
@@ -713,10 +922,10 @@ def render_pdf_preview(pdf_bytes: bytes, height: int = 540):
     """Renders a responsive PDF preview with fallback for mobile devices."""
     b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
     pdf_html = f'''
-    <div style="margin: 12px 0; border: 1px solid #334155; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); background: #1E293B;">
+    <div style="margin: 12px 0; border: 1px solid #26262B; border-top: 2px solid #8A6F33; border-radius: 10px; overflow: hidden; background: #111113;">
         <iframe class="pdf-iframe" src="data:application/pdf;base64,{b64_pdf}" width="100%" height="{height}px" type="application/pdf" style="border: none;">
-            <p style="padding: 20px; text-align: center; color: #94A3B8;">
-                📱 جهازك لا يدعم المعاينة المباشرة داخل المتصفح. اضغط على زر التحميل أدناه لحفظ الملف فوراً.
+            <p style="padding: 20px; text-align: center; color: #7D7D80;">
+                📱 جهازك لا يدعم المعاينة المباشرة. اضغط على زر التحميل أدناه لحفظ الملف.
             </p>
         </iframe>
     </div>
@@ -759,8 +968,29 @@ def prompt_api_key_dialog():
 # ----------------- MAIN HERO BANNER -----------------
 st.markdown("""
 <div class="dark-hero">
-    <h1 class="dark-hero-title">💼 مساعد التوظيف الذكي و مخصص الـ CV</h1>
-    <p class="dark-hero-desc">ارفع سيرتك الذاتية، افحص جاهزية الـ ATS الصارم، واستكشف وظائف LinkedIn المتاحة مع تخصيص الـ CV بنقرة زر واحدة!</p>
+    <h1 class="dark-hero-title">مساعد التوظيف الذكي <span class="gold">✦</span></h1>
+    <p class="dark-hero-desc">ارفع سيرتك الذاتية مرة واحدة — يفحص الذكاء الاصطناعي جاهزيتها للـ ATS، ويبحث في LinkedIn وتنقيب، ويخصّص نسخة CV مختلفة لكل شركة، ويولّد PDF احترافي جاهز للتقديم.</p>
+    <div class="hero-stat-row">
+        <div class="hero-stat">
+            <span class="hero-stat-num">ATS</span>
+            <span class="hero-stat-label">فحص صارم متعدد المعايير</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+            <span class="hero-stat-num">3</span>
+            <span class="hero-stat-label">منصات توظيف في بحث واحد</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+            <span class="hero-stat-num">PDF</span>
+            <span class="hero-stat-label">سيرة مخصصة لكل شركة</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+            <span class="hero-stat-num">100%</span>
+            <span class="hero-stat-label">خصوصية بياناتك محلياً</span>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -804,8 +1034,8 @@ with tabs[0]:
             st.session_state["gemini_model"] = chosen_tab1_model
         with col_m2:
             st.markdown(
-                '<div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 10px; padding: 10px 12px; margin-top: 24px; text-align: center; color: #34D399; font-weight: 700; font-size: 0.86rem;">'
-                '✨ موديلات Gemini مجانية 100%'
+                '<div style="background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 6px; padding: 10px 12px; margin-top: 24px; text-align: center; color: #C9A84C; font-weight: 700; font-size: 0.84rem;">'
+                '✦ موديلات Gemini مجانية 100%'
                 '</div>',
                 unsafe_allow_html=True
             )
@@ -1111,16 +1341,16 @@ with tabs[2]:
                 desc_html = ""
                 if desc_snippet and len(desc_snippet.strip()) > 30:
                     clean_snippet = html.escape(desc_snippet[:220].strip())
-                    desc_html = f'<p style="color: #CBD5E1; font-size: 0.88rem; margin: 10px 0 0 0; line-height: 1.5;">{clean_snippet}...</p>'
+                    desc_html = f'<p style="color: #7D7D80; font-size: 0.86rem; margin: 10px 0 0 0; line-height: 1.55;">{clean_snippet}…</p>'
 
                 card_html = (
                     '<div class="job-card-dark">'
                     '<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">'
-                    f'<h3 style="margin: 0 0 8px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">{title_esc}</h3>'
+                    f'<h3 style="margin: 0 0 8px 0; color: #EDEDEC; font-size: 1.1rem; font-weight: 800; font-family: Tajawal, Cairo, sans-serif;">{title_esc}</h3>'
                     f'<div>{match_chip} {source_chip}</div>'
                     '</div>'
-                    f'<p style="margin: 0 0 10px 0; color: #94A3B8; font-weight: 600; font-size: 0.9rem;">'
-                    f'🏢 {comp_esc} &nbsp; • &nbsp; 📍 {loc_esc} &nbsp; • &nbsp; 🕒 {time_esc}'
+                    f'<p style="margin: 0 0 10px 0; color: #7D7D80; font-weight: 600; font-size: 0.88rem;">'
+                    f'🏢 {comp_esc} &nbsp; · &nbsp; 📍 {loc_esc} &nbsp; · &nbsp; 🕒 {time_esc}'
                     '</p>'
                     '<div>'
                     f'<span class="chip chip-cyan">👨‍🔧 {analysis["role_type"]}</span>'
@@ -1361,7 +1591,7 @@ with tabs[4]:
                     st.write(f"**{res_item['title']}**")
                 with col_s:
                     if res_item["passed"]:
-                        st.markdown('<span style="color:#10B981; font-weight:700;">✅ ناجح (PASS)</span>', unsafe_allow_html=True)
+                        st.markdown('<span style="color:#22C55E; font-weight:700;">✅ ناجح</span>', unsafe_allow_html=True)
                     else:
                         st.markdown('<span style="color:#EF4444; font-weight:700;">❌ غير مجتاز</span>', unsafe_allow_html=True)
                 with col_m:
