@@ -386,7 +386,7 @@ def clean_error_message(e: Exception) -> str:
     """
     msg = str(e)
     # Strip drive letters and local system paths (including spaces)
-    msg = re.sub(r"[a-zA-Z]:\\[^:\r\n<>\"?*]+[\\/]", "[SystemPath]\\", msg)
+    msg = re.sub(r"[a-zA-Z]:\\[^:\r\n<>\"?*]+[\\/]", r"[SystemPath]\\", msg)
     msg = re.sub(r"/(?:mount/src|home|var|tmp)/[^:\r\n<>\"?*]+[\\/]", "[SystemPath]/", msg)
     msg = re.sub(r"File \".*?\", line \d+", "Error at handler", msg)
     # Clean generic API key leaks
