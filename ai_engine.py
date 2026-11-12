@@ -7,20 +7,30 @@ from security_guard import record_ai_usage, get_daily_quota_status, clean_error_
 from security_logger import log_security_event
 
 GEMINI_MODELS = [
-    "gemini-1.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-3.8-flash",
     "gemini-2.0-flash",
-    "gemini-1.5-flash-8b",
     "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
     "gemini-1.5-pro",
+    "gemini-2.0-flash-thinking-exp",
+    "gemini-2.0-pro-exp-02-05",
     "gemini-flash-latest"
 ]
 
 GEMINI_MODEL_LABELS = {
-    "gemini-1.5-flash": "gemini-1.5-flash (مجاني - فائق السرعة وموصى به ⚡)",
-    "gemini-2.0-flash": "gemini-2.0-flash (مجاني - الجيل الأحدث والأذكى 🚀)",
-    "gemini-1.5-flash-8b": "gemini-1.5-flash-8b (مجاني - خفيف وسريع واقتصادي 💡)",
-    "gemini-2.0-flash-lite": "gemini-2.0-flash-lite (مجاني - فائق السرعة وخفيف ⚡)",
-    "gemini-1.5-pro": "gemini-1.5-pro (مجاني بحصة محددة - الأعمق والأقوى تحليلاً 🧠)",
+    "gemini-2.5-flash": "gemini-2.5-flash (مجاني - الجيل الأحدث توازناً وسرعة ⚡)",
+    "gemini-2.5-flash-lite": "gemini-2.5-flash-lite (مجاني - فائق السرعة وخفيف جداً 🚀)",
+    "gemini-3.8-flash": "gemini-3.8-flash (مجاني - الموديل الأحدث للتحليل البرمجي والمنطقي 🧠)",
+    "gemini-2.0-flash": "gemini-2.0-flash (مجاني - سريع ومتعدد الوسائط ⚡)",
+    "gemini-2.0-flash-lite": "gemini-2.0-flash-lite (مجاني - اقتصادي وسريع للطلبات المتكررة 💡)",
+    "gemini-1.5-flash": "gemini-1.5-flash (مجاني - مستقر وفائق السرعة ⚡)",
+    "gemini-1.5-flash-8b": "gemini-1.5-flash-8b (مجاني - النسخة فائقة الخفة 💡)",
+    "gemini-1.5-pro": "gemini-1.5-pro (مجاني بحصة محددة - نافذة سياق ضخمة 🧠)",
+    "gemini-2.0-flash-thinking-exp": "gemini-2.0-flash-thinking-exp (مجاني تجريبي - يدعم التفكير والاستنتاج 💭)",
+    "gemini-2.0-pro-exp-02-05": "gemini-2.0-pro-exp (مجاني تجريبي - النسخة الاحترافية المتقدمة 🏆)",
     "gemini-flash-latest": "gemini-flash-latest (مجاني - التحديث التلقائي المستمر 🔄)"
 }
 
